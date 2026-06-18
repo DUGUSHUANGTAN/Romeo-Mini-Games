@@ -236,7 +236,7 @@ function revealCell(row, col) {
     if (gameOver || flagged[row][col] || revealed[row][col]) return false;
     if (firstClick) { placeMines(row, col); firstClick = false; startTimer(); }
     revealed[row][col] = true;
-    if (board[row][col] === -1) { gameOver = true; return true; }
+    if (board[row][col] === -1) { gameOver = true; if (timerInterval) clearInterval(timerInterval); return true; }
     if (board[row][col] === 0) {
         for (let dr = -1; dr <= 1; dr++)
             for (let dc = -1; dc <= 1; dc++) {
@@ -290,7 +290,7 @@ canvas.addEventListener('dblclick', (e) => {
                 if (nr >= 0 && nr < board.length && nc >= 0 && nc < board[0].length) {
                     if (!flagged[nr][nc] && !revealed[nr][nc]) {
                         const hitMine = revealCell(nr, nc);
-                        if (hitMine) { gameOver = true; document.getElementById('reset-btn').textContent = '😵'; revealAllMines(); drawBoard(); return; }
+                        if (hitMine) { gameOver = true; if (timerInterval) clearInterval(timerInterval); document.getElementById('reset-btn').textContent = '😵'; revealAllMines(); drawBoard(); return; }
                     }
                 }
             }

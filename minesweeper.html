@@ -44,7 +44,7 @@ canvas{display:block;image-rendering:pixelated}
 </head>
 <body>
 <div class="top-bar">
-<button class="toggle-btn" id="langToggle" title="Switch language">中/EN</button>
+<button class="toggle-btn" id="langToggle" title="Switch language">EN/中</button>
 <button class="toggle-btn" id="themeToggle" title="Toggle theme">🌙</button>
 </div>
 
@@ -89,7 +89,7 @@ const i18n = {
     }
 };
 
-let currentLang = 'zh';
+let currentLang = 'en';
 function setLanguage(lang) {
     currentLang = lang;
     const t = i18n[lang];

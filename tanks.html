@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tank Battle</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--panel-bg:rgba(22,27,34,0.65);--panel-border:rgba(48,54,61,0.7);--text:#c9d1d9;--text-secondary:#8b949e;--btn-bg:#238636;--btn-hover:#2ea043;--btn-resume:#d29922;--btn-resume-hover:#e3b341;--btn-secondary-bg:rgba(48,54,61,0.6);--btn-secondary-hover:rgba(63,70,79,0.8);--glass-highlight:rgba(255,255,255,0.06);--overlay-bg:rgba(1,4,9,0.85);--key-bg:rgba(48,54,61,0.6);--key-border:rgba(48,54,61,0.8);--board-bg:#010409}
+[data-theme="light"]{--bg:#f6f8fa;--panel-bg:rgba(255,255,255,0.65);--panel-border:rgba(208,215,222,0.7);--text:#1f2328;--text-secondary:#656d76;--btn-bg:#1f883d;--btn-hover:#2c974b;--btn-resume:#9a6700;--btn-resume-hover:#bf8700;--btn-secondary-bg:rgba(208,215,222,0.6);--btn-secondary-hover:rgba(188,195,204,0.8);--glass-highlight:rgba(255,255,255,0.5);--overlay-bg:rgba(255,255,255,0.9);--key-bg:rgba(208,215,222,0.6);--key-border:rgba(208,215,222,0.8);--board-bg:#ffffff}
+body{background:var(--bg);display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--text)}
+.top-bar{position:fixed;top:16px;right:16px;display:flex;gap:6px;z-index:100}
+.toggle-btn{width:30px;height:30px;border-radius:6px;border:1px solid var(--panel-border);background:var(--panel-bg);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s ease;box-shadow:inset 0 1px 0 var(--glass-highlight),0 4px 12px rgba(0,0,0,0.2)}
+.toggle-btn:hover{background:var(--btn-secondary-hover);transform:translateY(-1px)}
+.game-wrapper{display:flex;justify-content:center;align-items:center}
+
+
+
+
+
+
+
+.game-container{position:relative;background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:12px;box-shadow:inset 0 1px 0 var(--glass-highlight),0 8px 32px rgba(0,0,0,0.3);padding:4px}
+canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
+
+
+.btn{width:100%;padding:10px 16px;background:var(--btn-bg);border:1px solid rgba(240,246,252,0.1);border-radius:6px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:background 0.15s ease;text-align:center}
+.btn:hover{background:var(--btn-hover)}
+.btn-resume{background:var(--btn-resume)}
+.btn-resume:hover{background:var(--btn-resume-hover)}
+.mode-select{display:flex;gap:8px;margin-bottom:8px}
+.mode-btn{flex:1;padding:8px 12px;background:var(--btn-secondary-bg);border:1px solid var(--panel-border);border-radius:6px;color:var(--text);font-size:12px;cursor:pointer;text-align:center;transition:background 0.15s}
+.mode-btn.active{background:var(--btn-bg);color:#fff;border-color:var(--btn-bg)}
+.overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:var(--overlay-bg);border-radius:8px;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:50}
+.overlay.show{display:flex}
+.overlay-title{font-size:28px;font-weight:700;margin-bottom:4px}
+.overlay-title.red{color:#e33636}
+.overlay-title.blue{color:#3670e3}
+.overlay-sub{font-size:13px;color:var(--text-secondary);margin-bottom:8px;text-align:center}
+.start-title{font-size:32px;font-weight:700;margin-bottom:8px}
+
+
+.footer{position:fixed;bottom:12px;left:16px;color:var(--text-secondary);font-size:11px;opacity:0.5;z-index:100}
+</style>
+</head>
+<body>
+<div class="top-bar">
+<button class="toggle-btn" id="langToggle" title="Switch language">EN/中</button>
+<button class="toggle-btn" id="themeToggle" title="Toggle theme"><span class="icon">🌙</span></button>
+</div>
+<div class="game-wrapper">
+<div class="game-container">
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+<div class="overlay show" id="startOverlay">
+<div class="start-title" style="color:var(--text)" data-lang-key="tankBattle">Tank Battle</div>
+<div class="mode-select">
+<button class="mode-btn active" data-mode="pvai" data-lang-key="pvai">P1 vs AI</button>
+<button class="mode-btn" data-mode="pvp" data-lang-key="pvp">P1 vs P2</button>
+</div>
+<button class="btn" onclick="startGame()" id="startBtn" style="width:280px" data-lang-key="startGame">Start Game</button>
+</div>
+<div class="overlay" id="gameOverOverlay">
+<div class="overlay-title" id="winnerTitle" style="color:var(--text)" data-lang-key="gameOver">Game Over</div>
+<div class="overlay-sub" id="resultSub"></div>
+<div style="display:flex;gap:8px;width:100%;max-width:280px">
+<button onclick="startGame()" class="btn" data-lang-key="playAgain" style="flex:1">Play Again</button>
+<button onclick="backToMenu()" class="btn" style="flex:1;background:var(--btn-secondary-bg);color:var(--text)" data-lang-key="menu">Menu</button>
+</div>
+</div>
+</div>
+</div>
+<div class="footer">Romeo的坦克大战</div>
+<script>
+
+// ======================== Language ========================
+const LANG = {
+  en: {
+    tankBattle:'Tank Battle',p1:'P1',p2:'P2',p1Score:'Score: 0',p2Score:'Score: 0',
+    controls:'Controls',fwdBack:'Fwd/Back',turn:'Turn',shoot:'Shoot',
+    startGame:'Start Game',playAgain:'Play Again',menu:'Menu',
+    gameInfo:'Info',status:'Status',ready:'Ready',
+    pvai:'Player vs AI',pvp:'P1 vs P2',
+    p1Wins:'P1 Wins!',p2Wins:'P2 Wins!',playerWins:'Player Wins!',aiWins:'AI Wins!',
+    totalShots:'Total Shots:',gameOver:'Game Over',minimap:'Minimap',score:'Score:'
+  },
+  zh: {
+    tankBattle:'坦克大战',p1:'玩家1',p2:'玩家2',p1Score:'分数: 0',p2Score:'分数: 0',
+    controls:'操作',fwdBack:'前进/后退',turn:'转向',shoot:'射击',
+    startGame:'开始游戏',playAgain:'重新开始',menu:'返回菜单',
+    gameInfo:'信息',status:'状态',ready:'就绪',
+    pvai:'人机对战',pvp:'双人对战',
+    p1Wins:'玩家1胜!',p2Wins:'玩家2胜!',playerWins:'玩家胜!',aiWins:'AI胜!',
+    totalShots:'总射击:',gameOver:'游戏结束',minimap:'小地图',score:'分数:'
+  }
+};
+let currentLang = 'en';
+
+function applyLang(lang) {
+  currentLang = lang;
+  const t = LANG[lang];
+  document.querySelectorAll('[data-lang-key]').forEach(el => {
+    const key = el.dataset.langKey;
+    if (t[key]) {
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = t[key];
+      else el.textContent = t[key];
+    }
+  });
+  // Restore dynamic winner title if game over overlay is shown
+  const winnerTitle = document.getElementById('winnerTitle');
+  if (winnerTitle.dataset.winnerKey && t[winnerTitle.dataset.winnerKey]) {
+    winnerTitle.textContent = t[winnerTitle.dataset.winnerKey];
+  }
+  // Restore result sub text
+  const resultSub = document.getElementById('resultSub');
+  if (resultSub.dataset.resultFmt && tanks.length >= 2) {
+
+  }
+  document.getElementById('langToggle').textContent = lang === 'zh' ? 'EN/中' : '中/EN';
+  updateUI();
+  draw();
+}
+
+// ======================== Theme ========================
+function toggleTheme() {
+  const html = document.documentElement;
+  const isLight = html.getAttribute('data-theme') === 'light';
+  html.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  document.querySelector('#themeToggle .icon').textContent = isLight ? '🌙' : '☀️';
+  applyLang(currentLang);
+}
+
+document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+document.getElementById('langToggle').addEventListener('click', () => {
+  applyLang(currentLang === 'en' ? 'zh' : 'en');
+});
+
+// ======================== Audio ========================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function initAudio() { if (!audioCtx) audioCtx = new AudioCtx(); }
+function playShoot() {
+  try{initAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.connect(g);g.connect(audioCtx.destination);o.type='square';
+  o.frequency.setValueAtTime(220,audioCtx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(440,audioCtx.currentTime+0.05);
+  g.gain.setValueAtTime(0.15,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.1);
+  o.start();o.stop(audioCtx.currentTime+0.1)}catch(e){}
+}
+function playExplosion() {
+  try{initAudio();const b=audioCtx.createBufferSource();
+  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*0.3,audioCtx.sampleRate);
+  const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
+  b.buffer=buf;const g=audioCtx.createGain();b.connect(g);g.connect(audioCtx.destination);
+  g.gain.setValueAtTime(0.2,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.3);b.start()}catch(e){}
+}
+function playHit() {
+  try{initAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.connect(g);g.connect(audioCtx.destination);o.type='triangle';
+  o.frequency.setValueAtTime(400,audioCtx.currentTime);
+  o.frequency.exponentialRampToValueAtTime(100,audioCtx.currentTime+0.15);
+  g.gain.setValueAtTime(0.12,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.15);
+  o.start();o.stop(audioCtx.currentTime+0.15)}catch(e){}
+}
+
+// ======================== Game Constants ========================
+const COLS = 20, ROWS = 15, CELL = 40;
+const TANK_SIZE = 18, TANK_WIDTH = 26, BULLET_SPEED = 6, TANK_SPEED = 3, TURN_SPEED = 0.08;
+
+// ======================== Maps (5 open-layout maps, no closed loops) ========================
+const MAPS = [
+  {name:'Ruins',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:160,y1:0,x2:160,y2:180},{x1:300,y1:0,x2:300,y2:120},
+    {x1:540,y1:0,x2:540,y2:200},{x1:680,y1:0,x2:680,y2:140},
+    {x1:160,y1:440,x2:160,y2:600},{x1:120,y1:440,x2:280,y2:440},
+    {x1:540,y1:420,x2:540,y2:600},{x1:540,y1:420,x2:680,y2:420},
+    {x1:400,y1:0,x2:400,y2:160},{x1:320,y1:300,x2:480,y2:300},
+    {x1:400,y1:460,x2:400,y2:600},
+    {x1:60,y1:280,x2:180,y2:280},{x1:620,y1:280,x2:740,y2:280},
+    {x1:80,y1:100,x2:160,y2:100},{x1:640,y1:500,x2:720,y2:500},
+  ]},{name:'Alley',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:160,y1:0,x2:160,y2:180},{x1:160,y1:260,x2:160,y2:340},{x1:160,y1:420,x2:160,y2:600},
+    {x1:40,y1:180,x2:160,y2:180},{x1:40,y1:340,x2:160,y2:340},
+    {x1:640,y1:0,x2:640,y2:180},{x1:640,y1:260,x2:640,y2:340},{x1:640,y1:420,x2:640,y2:600},
+    {x1:640,y1:180,x2:740,y2:180},{x1:640,y1:340,x2:740,y2:340},
+    {x1:360,y1:0,x2:360,y2:200},{x1:440,y1:0,x2:440,y2:200},
+    {x1:360,y1:400,x2:360,y2:600},{x1:440,y1:400,x2:440,y2:600},
+    {x1:360,y1:280,x2:440,y2:280},{x1:360,y1:320,x2:440,y2:320},
+  ]},{name:'Fortress',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:80,y1:80,x2:720,y2:80},{x1:720,y1:80,x2:720,y2:200},
+    {x1:720,y1:280,x2:720,y2:400},{x1:720,y1:400,x2:720,y2:520},
+    {x1:80,y1:520,x2:720,y2:520},{x1:80,y1:80,x2:80,y2:200},
+    {x1:80,y1:280,x2:80,y2:400},{x1:80,y1:400,x2:80,y2:520},
+    {x1:200,y1:80,x2:200,y2:240},{x1:200,y1:240,x2:340,y2:240},
+    {x1:580,y1:80,x2:580,y2:240},{x1:580,y1:240,x2:460,y2:240},
+    {x1:200,y1:360,x2:340,y2:360},{x1:340,y1:360,x2:340,y2:520},
+    {x1:460,y1:360,x2:600,y2:360},{x1:460,y1:360,x2:460,y2:520},
+    {x1:380,y1:120,x2:420,y2:120},{x1:380,y1:480,x2:420,y2:480},
+  ]},{name:'Crossfire',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:200,y1:0,x2:200,y2:100},{x1:200,y1:180,x2:200,y2:420},{x1:200,y1:500,x2:200,y2:600},
+    {x1:600,y1:0,x2:600,y2:100},{x1:600,y1:180,x2:600,y2:420},{x1:600,y1:500,x2:600,y2:600},
+    {x1:0,y1:160,x2:100,y2:160},{x1:700,y1:160,x2:800,y2:160},
+    {x1:0,y1:440,x2:100,y2:440},{x1:700,y1:440,x2:800,y2:440},
+    {x1:400,y1:0,x2:400,y2:200},{x1:400,y1:400,x2:400,y2:600},
+    {x1:280,y1:200,x2:280,y2:260},{x1:280,y1:340,x2:280,y2:400},
+    {x1:520,y1:200,x2:520,y2:260},{x1:520,y1:340,x2:520,y2:400},
+    {x1:100,y1:300,x2:280,y2:300},{x1:520,y1:300,x2:700,y2:300},
+  ]},{name:'Chaos',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:120,y1:0,x2:120,y2:200},{x1:260,y1:0,x2:260,y2:160},
+    {x1:540,y1:0,x2:540,y2:180},{x1:680,y1:0,x2:680,y2:140},
+    {x1:120,y1:400,x2:120,y2:600},{x1:260,y1:440,x2:260,y2:600},
+    {x1:540,y1:420,x2:540,y2:600},{x1:680,y1:460,x2:680,y2:600},
+    {x1:0,y1:280,x2:200,y2:280},{x1:320,y1:120,x2:480,y2:120},
+    {x1:600,y1:280,x2:800,y2:280},{x1:320,y1:480,x2:480,y2:480},
+    {x1:400,y1:240,x2:400,y2:360},{x1:200,y1:120,x2:280,y2:120},
+    {x1:600,y1:320,x2:680,y2:320},{x1:240,y1:320,x2:320,y2:320},{x1:520,y1:180,x2:600,y2:180},
+  ]},{name:'Maze',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:200,y1:0,x2:200,y2:120},{x1:200,y1:200,x2:200,y2:400},{x1:200,y1:480,x2:200,y2:600},
+    {x1:400,y1:0,x2:400,y2:200},{x1:400,y1:280,x2:400,y2:400},{x1:400,y1:480,x2:400,y2:600},
+    {x1:600,y1:0,x2:600,y2:120},{x1:600,y1:200,x2:600,y2:400},{x1:600,y1:480,x2:600,y2:600},
+    {x1:0,y1:280,x2:120,y2:280},{x1:280,y1:120,x2:400,y2:120},
+    {x1:280,y1:400,x2:400,y2:400},{x1:600,y1:280,x2:720,y2:280},
+  ]},{name:'Arena',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:0,y1:200,x2:160,y2:200},{x1:640,y1:200,x2:800,y2:200},
+    {x1:0,y1:400,x2:160,y2:400},{x1:640,y1:400,x2:800,y2:400},
+    {x1:300,y1:0,x2:300,y2:200},{x1:500,y1:0,x2:500,y2:200},
+    {x1:300,y1:400,x2:300,y2:600},{x1:500,y1:400,x2:500,y2:600},
+    {x1:160,y1:100,x2:200,y2:100},{x1:600,y1:500,x2:640,y2:500},
+    {x1:400,y1:260,x2:400,y2:340},
+  ]},{name:'Tunnel',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:40,y1:120,x2:280,y2:120},{x1:520,y1:120,x2:740,y2:120},
+    {x1:40,y1:480,x2:280,y2:480},{x1:520,y1:480,x2:740,y2:480},
+    {x1:380,y1:0,x2:380,y2:120},{x1:380,y1:480,x2:380,y2:600},
+    {x1:160,y1:120,x2:160,y2:300},{x1:160,y1:300,x2:300,y2:300},{x1:300,y1:300,x2:300,y2:480},
+    {x1:640,y1:120,x2:640,y2:280},{x1:640,y1:300,x2:500,y2:300},{x1:500,y1:300,x2:500,y2:480},
+    {x1:400,y1:220,x2:400,y2:380},
+  ]},{name:'Split',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:400,y1:0,x2:400,y2:160},{x1:400,y1:440,x2:400,y2:600},{x1:0,y1:200,x2:200,y2:200},{x1:200,y1:200,x2:200,y2:280},{x1:200,y1:340,x2:200,y2:400},
+    {x1:200,y1:400,x2:0,y2:400},{x1:800,y1:200,x2:600,y2:200},{x1:600,y1:200,x2:600,y2:280},{x1:600,y1:340,x2:600,y2:400},
+    {x1:600,y1:400,x2:800,y2:400},{x1:400,y1:120,x2:520,y2:120},{x1:400,y1:480,x2:520,y2:480},
+    {x1:280,y1:120,x2:280,y2:240},{x1:520,y1:360,x2:520,y2:480},
+  ]},{name:'Diamond',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:400,y1:40,x2:400,y2:200},{x1:400,y1:400,x2:400,y2:560},
+    {x1:200,y1:120,x2:200,y2:300},{x1:600,y1:120,x2:600,y2:300},
+    {x1:200,y1:300,x2:200,y2:480},{x1:600,y1:300,x2:600,y2:480},
+    {x1:40,y1:200,x2:200,y2:200},{x1:600,y1:200,x2:740,y2:200},
+    {x1:40,y1:400,x2:200,y2:400},{x1:600,y1:400,x2:740,y2:400},
+    {x1:120,y1:40,x2:120,y2:120},{x1:680,y1:480,x2:680,y2:560},
+  ]},{name:'Grid',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:200,y1:0,x2:200,y2:100},{x1:200,y1:180,x2:200,y2:420},{x1:200,y1:500,x2:200,y2:600},
+    {x1:400,y1:0,x2:400,y2:100},{x1:400,y1:180,x2:400,y2:420},{x1:400,y1:500,x2:400,y2:600},
+    {x1:600,y1:0,x2:600,y2:100},{x1:600,y1:180,x2:600,y2:420},{x1:600,y1:500,x2:600,y2:600},
+    {x1:0,y1:300,x2:160,y2:300},{x1:240,y1:300,x2:360,y2:300},{x1:440,y1:300,x2:560,y2:300},{x1:640,y1:300,x2:800,y2:300},
+    {x1:100,y1:100,x2:100,y2:200},{x1:700,y1:400,x2:700,y2:500},
+  ]},{name:'Bunker',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:120,y1:0,x2:120,y2:200},{x1:160,y1:200,x2:280,y2:200},{x1:280,y1:200,x2:280,y2:0},
+    {x1:520,y1:0,x2:520,y2:200},{x1:520,y1:200,x2:640,y2:200},{x1:680,y1:200,x2:680,y2:0},
+    {x1:120,y1:400,x2:120,y2:600},{x1:160,y1:400,x2:280,y2:400},{x1:280,y1:400,x2:280,y2:600},
+    {x1:520,y1:400,x2:520,y2:600},{x1:520,y1:400,x2:640,y2:400},{x1:680,y1:400,x2:680,y2:600},
+    {x1:400,y1:160,x2:400,y2:440},
+  ]},{name:'Octagon',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:400,y1:0,x2:400,y2:80},{x1:400,y1:520,x2:400,y2:600},
+    {x1:0,y1:300,x2:80,y2:300},{x1:720,y1:300,x2:800,y2:300},
+    {x1:200,y1:80,x2:200,y2:200},{x1:200,y1:200,x2:80,y2:200},{x1:80,y1:200,x2:80,y2:300},
+    {x1:600,y1:80,x2:600,y2:200},{x1:600,y1:200,x2:720,y2:200},{x1:720,y1:200,x2:720,y2:300},
+    {x1:200,y1:400,x2:200,y2:520},{x1:200,y1:400,x2:80,y2:400},{x1:80,y1:400,x2:80,y2:300},
+    {x1:600,y1:400,x2:600,y2:520},{x1:600,y1:400,x2:720,y2:400},{x1:720,y1:400,x2:720,y2:300},
+    {x1:280,y1:120,x2:320,y2:120},{x1:480,y1:480,x2:520,y2:480},
+  ]},{name:'Fort',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:200,y1:0,x2:200,y2:160},{x1:200,y1:240,x2:200,y2:360},{x1:200,y1:440,x2:200,y2:600},
+    {x1:600,y1:0,x2:600,y2:160},{x1:600,y1:240,x2:600,y2:360},{x1:600,y1:440,x2:600,y2:600},
+    {x1:0,y1:160,x2:120,y2:160},{x1:680,y1:160,x2:800,y2:160},
+    {x1:0,y1:440,x2:120,y2:440},{x1:680,y1:440,x2:800,y2:440},
+    {x1:400,y1:80,x2:400,y2:200},{x1:400,y1:400,x2:400,y2:520},
+    {x1:280,y1:240,x2:520,y2:240},{x1:280,y1:360,x2:520,y2:360},
+    {x1:100,y1:280,x2:200,y2:280},{x1:600,y1:280,x2:700,y2:280},
+  ]},{name:'Ring',lines:[
+    {x1:0,y1:0,x2:800,y2:0},{x1:800,y1:0,x2:800,y2:600},
+    {x1:800,y1:600,x2:0,y2:600},{x1:0,y1:600,x2:0,y2:0},
+    {x1:100,y1:100,x2:320,y2:100},{x1:480,y1:100,x2:700,y2:100},{x1:700,y1:100,x2:700,y2:240},{x1:700,y1:360,x2:700,y2:500},
+    {x1:700,y1:500,x2:480,y2:500},{x1:320,y1:500,x2:100,y2:500},{x1:100,y1:500,x2:100,y2:360},{x1:100,y1:240,x2:100,y2:100},
+    {x1:300,y1:100,x2:300,y2:250},{x1:300,y1:350,x2:300,y2:500},
+    {x1:500,y1:100,x2:500,y2:250},{x1:500,y1:350,x2:500,y2:500},
+    {x1:100,y1:300,x2:250,y2:300},{x1:550,y1:300,x2:700,y2:300},
+    {x1:400,y1:160,x2:400,y2:260},{x1:400,y1:340,x2:400,y2:440},
+  ]},
+];
+// ======================== Game State ========================
+let canvas, ctx;
+let gameRunning = false, gamePaused = false, endGameTimer = null;
+let gameMode = 'pvai';
+let currentMap = 0, lastMaps = [];
+let mapLines = null;
+let navGrid = null; // 导航网格 [row][col], 0=可通过 1=阻挡
+const NAV_STEP = 20; // 网格步进
+const NAV_COLS = 40; // 800/20
+const NAV_ROWS = 30; // 600/20
+let tanks = [], bullets = [], explosions = [];
+let keys = {};
+let animFrame = null;
+
+// ======================== Utility Functions ========================
+function buildLineSet(idx) { return MAPS[idx].lines; }
+
+// 预计算导航网格：将线段墙转为 20px 格子的阻挡地图
+function buildNavGrid(lines) {
+  const grid = [];
+  const margin = 12; // 坦克半宽+余量
+  for (let r = 0; r < NAV_ROWS; r++) {
+    grid[r] = [];
+    for (let c = 0; c < NAV_COLS; c++) {
+      const wx = c * NAV_STEP + NAV_STEP / 2;
+      const wy = r * NAV_STEP + NAV_STEP / 2;
+      let blocked = false;
+      for (const l of lines) {
+        if (pointToLineDist(wx, wy, l.x1, l.y1, l.x2, l.y2) < margin) {
+          blocked = true;
+          break;
+        }
+      }
+      grid[r][c] = blocked ? 1 : 0;
+    }
+  }
+  return grid;
+}
+
+function pointToLineDist(px, py, x1, y1, x2, y2) {
+  const A=px-x1,B=py-y1,C=x2-x1,D=y2-y1;
+  const dot=A*C+B*D,len2=C*C+D*D;
+  let t=len2!==0?dot/len2:-1;t=Math.max(0,Math.min(1,t));
+  return Math.sqrt((px-(x1+t*C))**2+(py-(y1+t*D))**2);
+}
+
+function lineIntersectsRect(lx1,ly1,lx2,ly2,rx,ry,rw,rh) {
+  // Check if any point along the line is within distance 6 of any corner
+  const pts=[[rx,ry],[rx+rw,ry],[rx,ry+rh],[rx+rw,ry+rh]];
+  for(const[px,py]of pts){if(pointToLineDist(px,py,lx1,ly1,lx2,ly2)<6)return true}
+  // Check if line endpoints are inside rect
+  if(rx<=lx1&&lx1<=rx+rw&&ry<=ly1&&ly1<=ry+rh)return true;
+  if(rx<=lx2&&lx2<=rx+rw&&ry<=ly2&&ly2<=ry+rh)return true;
+  // Check line segment crossing through rect (sample every 10px along the line)
+  const segLen=Math.sqrt((lx2-lx1)**2+(ly2-ly1)**2);
+  const steps=Math.max(4,Math.ceil(segLen/6));
+  for(let i=1;i<steps;i++){
+    const t=i/steps;
+    const px=lx1+(lx2-lx1)*t,py=ly1+(ly2-ly1)*t;
+    if(px>rx&&px<rx+rw&&py>ry&&py<ry+rh)return true;
+  }
+  return false;
+}
+
+// ======================== Tank Class ========================
+class Tank {
+  constructor(x,y,color,isPlayer){
+    this.x=x;this.y=y;this.color=color;this.isPlayer=isPlayer;
+    this.size=TANK_SIZE;this.width=TANK_WIDTH;
+    this.dir=0;this.speed=TANK_SPEED;this.alive=true;
+    this.cooldown=0;this.cooldownMax=20;
+    this.score=0;this.shotsFired=0;
+    this.moveDir=-1;this.moveTimer=0;this.shootTimer=0;
+    // 寻路属性
+    this._path=[];          // BFS 路径节点列表 [{x,y}]
+    this._pathIndex=0;      // 当前路径目标点索引
+    this._pathTimer=0;      // 路径刷新计时
+    this._stuckCount=0;     // 卡住计数器
+  }
+  get cx(){return this.x+this.width/2}
+  get cy(){return this.y+this.size/2}
+  draw(ctx){
+    if(!this.alive)return;
+    ctx.save();
+    ctx.translate(this.cx,this.cy);
+    ctx.rotate(this.dir);
+    // Barrel (pointing right, dir=0=right)
+    // Barrel (pointing right, dir=0=right)
+    const l=isLight();
+    ctx.fillStyle=l?'#666':'#ccc';
+    const bs=7;
+    ctx.fillRect(this.width/2+1,-bs/2,bs,bs);
+    ctx.strokeStyle=l?'#000':'#fff';
+    ctx.strokeRect(this.width/2+1,-bs/2,bs,bs);
+    // Body (narrow side faces right, matches dir=0)
+    ctx.fillStyle=this.color;
+    ctx.fillRect(-this.width/2,-this.size/2,this.width,this.size);
+    // Outline for visibility
+    ctx.strokeStyle=l?'#000':'#fff';
+    ctx.lineWidth=2;ctx.strokeRect(-this.width/2,-this.size/2,this.width,this.size);
+    // Treads
+    ctx.fillStyle=l?'#666':'#888';
+    ctx.fillRect(-this.width/2-2,-this.size/2+3,3,this.size-6);
+    ctx.fillRect(this.width/2-1,-this.size/2+3,3,this.size-6);
+    // AI label
+    if(!this.isPlayer){
+      ctx.fillStyle=l?'#000':'#fff';
+      ctx.font='bold 9px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('AI',0,2);
+    }
+    ctx.restore();
+  }
+  canMove(nx,ny,lines){
+    const w=this.width,s=this.size;
+    if(nx<-1||ny<-1||nx+w>COLS*CELL+1||ny+s>ROWS*CELL+1)return false;
+    const m=2;
+    for(const l of lines){
+      if(lineIntersectsRect(l.x1,l.y1,l.x2,l.y2,nx+m,ny+m,w-m*2,s-m*2))return false;
+    }
+    for(const t of tanks){
+      if(t===this||!t.alive)continue;
+      if(nx+w>t.x&&nx<t.x+t.width&&ny+s>t.y&&ny<t.y+t.size)return false;
+    }
+    return true;
+  }
+  shoot(){
+    if(this.cooldown>0||!this.alive)return false;
+    this.cooldown=this.cooldownMax;this.shotsFired++;
+    const angle=this.dir;
+    const bx=this.cx+Math.cos(angle)*(this.size/2+2);
+    const by=this.cy+Math.sin(angle)*(this.size/2+2);
+    bullets.push(new Bullet(bx,by,angle,this));
+    playShoot();return true;
+  }
+  update(){if(this.cooldown>0)this.cooldown--}
+
+  // ---- BFS 网格寻路 ----
+  // 用 CELL/2 = 20px 网格，坦克中心点穿过网格时检测是否与墙碰撞
+  _findPath(targetX,targetY){
+    // 用预计算的 navGrid 做 BFS 寻路
+    if(!navGrid) return;
+    
+    const endCol = Math.floor(targetX / NAV_STEP);
+    const endRow = Math.floor(targetY / NAV_STEP);
+    const startCol = Math.floor(this.cx / NAV_STEP);
+    const startRow = Math.floor(this.cy / NAV_STEP);
+    
+    if (startCol < 0 || startCol >= NAV_COLS || startRow < 0 || startRow >= NAV_ROWS) { this._path = []; return; }
+    if (endCol < 0 || endCol >= NAV_COLS || endRow < 0 || endRow >= NAV_ROWS) { this._path = []; return; }
+    // 如果起点在墙里（navGrid 精度问题），以起点为中心的 3x3 找最近可用格子
+    let actualStartR = startRow, actualStartC = startCol;
+    if (navGrid[startRow][startCol]) {
+      let found = false;
+      for (let dr = -1; dr <= 1 && !found; dr++) {
+        for (let dc = -1; dc <= 1 && !found; dc++) {
+          const nr = startRow + dr, nc = startCol + dc;
+          if (nr >= 0 && nr < NAV_ROWS && nc >= 0 && nc < NAV_COLS && !navGrid[nr][nc]) {
+            actualStartR = nr; actualStartC = nc; found = true;
+          }
+        }
+      }
+      if (!found) { this._path = []; return; }
+    }
+    // 如果终点在墙里，以终点为中心的 3x3 找最近可用格子
+    let actualEndR = endRow, actualEndC = endCol;
+    if (navGrid[endRow][endCol]) {
+      let found = false;
+      for (let dr = -1; dr <= 1 && !found; dr++) {
+        for (let dc = -1; dc <= 1 && !found; dc++) {
+          const nr = endRow + dr, nc = endCol + dc;
+          if (nr >= 0 && nr < NAV_ROWS && nc >= 0 && nc < NAV_COLS && !navGrid[nr][nc]) {
+            actualEndR = nr; actualEndC = nc; found = true;
+          }
+        }
+      }
+      if (!found) { this._path = []; return; }
+    }
+
+    const total = NAV_COLS * NAV_ROWS;
+    const visited = new Array(total).fill(false);
+    const prev = new Array(total).fill(-1);
+    const queue = [actualStartR * NAV_COLS + actualStartC];
+    visited[actualStartR * NAV_COLS + actualStartC] = true;
+    
+    const dirs = [[0,-1],[0,1],[-1,0],[1,0]];
+    let found = false;
+
+    while (queue.length > 0) {
+      const cur = queue.shift();
+      const cr = Math.floor(cur / NAV_COLS);
+      const cc = cur % NAV_COLS;
+      if (cr === actualEndR && cc === actualEndC) { found = true; break; }
+      for (const [dc, dr] of dirs) {
+        const nr = cr + dr, nc = cc + dc;
+        if (nr < 0 || nr >= NAV_ROWS || nc < 0 || nc >= NAV_COLS) continue;
+        if (navGrid[nr][nc]) continue; // 墙
+        const idx = nr * NAV_COLS + nc;
+        if (visited[idx]) continue;
+        visited[idx] = true;
+        prev[idx] = cur;
+        queue.push(idx);
+      }
+    }
+
+    if (!found) { this._path = []; this._pathIndex = 0; return; }
+
+    // 回溯路径
+    const path = [];
+    let cur = actualEndR * NAV_COLS + actualEndC;
+    while (cur !== -1) {
+      const r = Math.floor(cur / NAV_COLS);
+      const c = cur % NAV_COLS;
+      path.push({ x: c * NAV_STEP + NAV_STEP/2, y: r * NAV_STEP + NAV_STEP/2 });
+      cur = prev[cur];
+    }
+    path.reverse();
+    
+    // 简化路径：去掉直线上的中间点
+    if (path.length > 2) {
+      const simplified = [path[0]];
+      for (let i = 1; i < path.length - 1; i++) {
+        const prevP = simplified[simplified.length-1];
+        const nextP = path[i+1];
+        // 如果 prev->i->next 在同一直线上，跳过 i
+        const dx1 = path[i].x - prevP.x, dy1 = path[i].y - prevP.y;
+        const dx2 = nextP.x - path[i].x, dy2 = nextP.y - path[i].y;
+        const sameDir = Math.abs(dx1*dy2 - dy1*dx2) < 0.1; // 叉积判断共线
+        if (!sameDir) simplified.push(path[i]);
+      }
+      simplified.push(path[path.length-1]);
+      this._path = simplified;
+    } else {
+      this._path = path;
+    }
+    // 跳过起点（路径长度 > 1 时跳过，否则保留目标点）
+    if (this._path.length > 1) this._path.shift();
+    this._pathIndex = 0;
+  }
+
+  // 沿路径走一步（通过前进/后退跟随路径，方向始终对齐炮口 dir）
+  _followPath(speed){
+    if (!this._path || this._pathIndex >= this._path.length) {
+      this._path = []; return;
+    }
+
+    const target = this._path[this._pathIndex];
+    const dx = target.x - this.cx;
+    const dy = target.y - this.cy;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+
+    if (dist < 6) {
+      this._pathIndex++;
+      if (this._pathIndex >= this._path.length) { this._path = []; return; }
+      return this._followPath(speed);
+    }
+
+    // 炮口平滑转向路径方向
+    const targetAngle = Math.atan2(dy, dx);
+    let diff = targetAngle - this.dir;
+    while (diff > Math.PI) diff -= Math.PI*2;
+    while (diff < -Math.PI) diff += Math.PI*2;
+    this.dir += Math.sign(diff) * Math.min(Math.abs(diff), 0.08);
+
+    // 沿炮口方向前进（同玩家 W）
+    const nx = this.x + Math.cos(this.dir) * speed;
+    const ny = this.y + Math.sin(this.dir) * speed;
+    
+    if (this.canMove(nx, ny, mapLines)) {
+      this.x = nx; this.y = ny;
+      return;
+    }
+
+    // 卡住了：尝试垂直 / 反向滑行
+    for (const side of [1, -1]) {
+      const sa = this.dir + Math.PI/2 * side;
+      const sx = this.x + Math.cos(sa) * speed * 0.8;
+      const sy = this.y + Math.sin(sa) * speed * 0.8;
+      if (this.canMove(sx, sy, mapLines)) { this.x = sx; this.y = sy; return; }
+    }
+    // 反向
+    const bx = this.x - Math.cos(this.dir) * speed * 0.5;
+    const by = this.y - Math.sin(this.dir) * speed * 0.5;
+    if (this.canMove(bx, by, mapLines)) { this.x = bx; this.y = by; return; }
+    
+    this._path = [];
+    this._stuckCount = 6;
+  }
+  updateAI(){
+    if(!this.alive)return;
+    const enemy=tanks.find(t=>t!==this&&t.alive);
+    if(!enemy){this.update();return}
+
+    const dx=enemy.cx-this.cx,dy=enemy.cy-this.cy;
+    const distToEnemy=Math.sqrt(dx*dx+dy*dy);
+    const targetAngle=Math.atan2(dy,dx);
+
+    // ---- 炮弹轨迹预判（模拟反弹路径） ----
+    let nearestBulletDist = Infinity, nearestBulletEvade = null;
+    const bulletRadius = 4;
+    for (const b of bullets) {
+      if (!b.alive || b.owner === this) continue;
+      // 沿子弹当前方向模拟飞行（最多模拟 600px 或 5 次反弹）
+      let simX = b.x, simY = b.y, simVx = b.vx, simVy = b.vy;
+      let hit = false;
+      for (let step = 0; step < 120; step++) { // 600px / 5px per step
+        simX += simVx * 5 / Math.sqrt(simVx*simVx + simVy*simVy);
+        simY += simVy * 5 / Math.sqrt(simVx*simVx + simVy*simVy);
+        // 边界反弹
+        if (simX < 0 || simX > 800 || simY < 0 || simY > 600) break;
+        // 墙反弹
+        let bounced = false;
+        for (const l of mapLines) {
+          const ax = simX - l.x1, ay = simY - l.y1;
+          const wx = l.x2 - l.x1, wy = l.y2 - l.y1;
+          const wlen2 = wx*wx + wy*wy;
+          let t = (ax*wx + ay*wy) / (wlen2 || 1);
+          t = Math.max(0, Math.min(1, t));
+          const cx = l.x1 + t*wx, cy = l.y1 + t*wy;
+          const ddx = simX - cx, ddy = simY - cy;
+          const dist = Math.sqrt(ddx*ddx + ddy*ddy);
+          if (dist < bulletRadius + 1) {
+            const nx = ddx / dist || 0, ny = ddy / dist || 0;
+            const dot = simVx * nx + simVy * ny;
+            if (dot < 0) { simVx -= 2 * dot * nx; simVy -= 2 * dot * ny; }
+            bounced = true;
+            break;
+          }
+        }
+        // 检测模拟点是否离自己很近
+        const toMeX = this.cx - simX, toMeY = this.cy - simY;
+        if (Math.sqrt(toMeX*toMeX + toMeY*toMeY) < 30) {
+          hit = true; break;
+        }
+        if (bounced) {
+          // 反弹后继续追踪最多 300px
+          if (step > 60) break;
+        }
+      }
+      if (hit) {
+        const bdx = this.cx - b.x, bdy = this.cy - b.y;
+        const dist = Math.sqrt(bdx*bdx + bdy*bdy);
+        if (dist < nearestBulletDist) {
+          nearestBulletDist = dist;
+          // 闪避方向：垂直子弹当前方向
+          const bulletAngle = Math.atan2(simVy, simVx);
+          nearestBulletEvade = bulletAngle + Math.PI / 2 * (Math.random() < 0.5 ? 1 : -1);
+        }
+      }
+    }
+
+    // ---- 态势评估 ----
+    const enemyAngleToMe = Math.atan2(-dy, -dx);
+    let enemyAimDiff = enemyAngleToMe - enemy.dir;
+    while (enemyAimDiff > Math.PI) enemyAimDiff -= Math.PI*2;
+    while (enemyAimDiff < -Math.PI) enemyAimDiff += Math.PI*2;
+    const enemyAimingAtMe = Math.abs(enemyAimDiff) < 0.5;
+
+    const hasIncomingBullet = nearestBulletDist < 400;
+    const enemyTooClose = distToEnemy < 120;
+    const inDanger = enemyAimingAtMe || hasIncomingBullet || enemyTooClose;
+
+    // ---- BFS 寻路移动 ----
+    const speed = this.speed * 0.7;
+    const distToGoal = this._path.length > 0
+      ? Math.sqrt((this._path[this._path.length-1].x - this.cx)**2 + (this._path[this._path.length-1].y - this.cy)**2)
+      : Infinity;
+
+    this._pathTimer--;
+    const needReplan = this._pathTimer <= 0
+      || this._path.length === 0
+      || this._stuckCount > 0
+      || (distToGoal > 80);
+
+    if (needReplan) {
+      this._stuckCount = 0;
+      let goalX, goalY;
+
+      if (inDanger && nearestBulletEvade !== null) {
+        // 有子弹飞来：朝子弹垂直方向闪避 200px
+        goalX = Math.max(40, Math.min(760, this.cx + Math.cos(nearestBulletEvade) * 200));
+        goalY = Math.max(40, Math.min(560, this.cy + Math.sin(nearestBulletEvade) * 200));
+      } else if (inDanger) {
+        // 其他危险（被瞄准、太近）：朝敌人反方向撤退 250px
+        goalX = Math.max(40, Math.min(760, this.cx + Math.cos(targetAngle + Math.PI) * 250));
+        goalY = Math.max(40, Math.min(560, this.cy + Math.sin(targetAngle + Math.PI) * 250));
+      } else {
+        // 安全：朝敌人位置寻路
+        goalX = enemy.cx;
+        goalY = enemy.cy;
+      }
+      this._findPath(goalX, goalY);
+      this._pathTimer = 10;
+    }
+
+    if (this._stuckCount > 0) this._stuckCount--;
+    if (this._path.length > 0 && this._stuckCount <= 0) {
+      this._followPath(speed);
+    }
+
+    // ---- 微调炮口朝向敌人（不阻碍移动） ----
+    let diff = targetAngle - this.dir;
+    while (diff > Math.PI) diff -= Math.PI*2;
+    while (diff < -Math.PI) diff += Math.PI*2;
+
+    // ---- 射击决策 ----
+    if(this.shootTimer>0)this.shootTimer--;
+    // 子弹飞来或危险时不射击
+    const shouldNotShoot = inDanger || hasIncomingBullet;
+    if(!shouldNotShoot && Math.abs(diff)<0.25 && this.shootTimer===0){
+      let lineOfSight=true;
+      const steps=Math.max(4,Math.floor(distToEnemy/20));
+      for(let i=1;i<steps;i++){
+        const t=i/steps;
+        const px=this.cx+(enemy.cx-this.cx)*t;
+        const py=this.cy+(enemy.cy-this.cy)*t;
+        const margin=Math.max(this.width,this.size)/2;
+        let blocked=false;
+        for(const l of mapLines){
+          if(pointToLineDist(px,py,l.x1,l.y1,l.x2,l.y2)<margin){blocked=true;break}
+        }
+        if(blocked){lineOfSight=false;break}
+      }
+      if(lineOfSight){
+        this.shoot();
+        this.shootTimer=20+Math.floor(Math.random()*10);
+      }
+    }
+
+    this.update();
+  }
+
+}
+
+// ======================== Bullet Class ========================
+class Bullet {
+  constructor(x,y,dir,owner){
+    this.x=x;this.y=y;this.dir=dir;this.owner=owner;
+    this.r=4;this.alive=true;this.trail=[];
+    this.vx=Math.cos(dir)*BULLET_SPEED;this.vy=Math.sin(dir)*BULLET_SPEED;
+    this.color=owner.color;
+  }
+  update(){
+    if(!this.alive)return;
+    this.trail.push({x:this.x,y:this.y});
+    if(this.trail.length>5)this.trail.shift();
+    // Move bullet in small sub-steps to prevent wall skipping
+    const speed=Math.sqrt(this.vx*this.vx+this.vy*this.vy);
+    const steps=Math.ceil(speed/2);
+    let bounced=false;
+    for(let s=0;s<steps;s++){
+      const svx=this.vx/steps,svy=this.vy/steps;
+      this.x+=svx;this.y+=svy;
+      // Out of bounds
+      if(this.x<-10||this.x>COLS*CELL+10||this.y<-10||this.y>ROWS*CELL+10){this.alive=false;return}
+      // Bullet radius check against each wall segment
+      const br=this.r;
+      for(const l of mapLines){
+        // Vector from wall start to bullet
+        const ax=this.x-l.x1,ay=this.y-l.y1;
+        // Wall direction vector
+        const wx=l.x2-l.x1,wy=l.y2-l.y1;
+        const wlen2=wx*wx+wy*wy;
+        // Project bullet onto wall line, clamped to segment
+        let t=(ax*wx+ay*wy)/wlen2;
+        t=Math.max(0,Math.min(1,t));
+        // Closest point on wall segment to bullet
+        const cx=l.x1+t*wx,cy=l.y1+t*wy;
+        const dx=this.x-cx,dy=this.y-cy;
+        const dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<br+1){
+          // Wall normal (perpendicular, pointing toward bullet)
+          const nx=dx/dist||0,ny=dy/dist||0;
+          // Reflect velocity
+          const dot=this.vx*nx+this.vy*ny;
+          if(dot<0){
+            this.vx-=2*dot*nx;
+            this.vy-=2*dot*ny;
+          }
+          // Push bullet out to safe distance
+          this.x=cx+nx*(br+2);this.y=cy+ny*(br+2);
+          bounced=true;
+          break;
+        }
+      }
+      if(bounced)break;
+      // Check tank collision in sub-step (with bullet radius)
+      for(const t of tanks){
+        if(!t.alive)continue;
+        if(t===this.owner&&!this.bounces)continue;
+        const br=this.r;
+        if(this.x+br>t.x&&this.x-br<t.x+t.width&&this.y+br>t.y&&this.y-br<t.y+t.size){
+          this.alive=false;t.alive=false;t.score++;
+          spawnExplosion(t.cx,t.cy,20,t.color);playExplosion();
+          const alive=tanks.filter(t=>t.alive);
+          if(alive.length<=1){
+            if(endGameTimer)clearTimeout(endGameTimer);
+            endGameTimer=setTimeout(()=>endGame(alive[0]||null),800);
+          }
+          return;
+        }
+      }
+    }
+    if(bounced){
+      playHit();
+      this.bounces=(this.bounces||0)+1;
+      if(this.bounces>=10)this.alive=false;
+    }
+  }
+  draw(ctx){
+    if(!this.alive)return;
+    ctx.fillStyle=this.color;ctx.shadowColor=this.color;ctx.shadowBlur=6;
+    ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+  }
+}
+
+// ======================== Explosion ========================
+function spawnExplosion(x,y,size,color){
+  for(let i=0;i<12;i++){
+    const angle=Math.random()*Math.PI*2,speed=1+Math.random()*3;
+    explosions.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,size:2+Math.random()*4,life:1,color,flash:i===0});
+  }
+}
+
+function isLight(){return document.documentElement.getAttribute('data-theme')==='light'}
+
+// ======================== Drawing ========================
+function drawMap(ctx,lines){
+  const light=isLight();
+  ctx.strokeStyle=light?'#000':'#fff';
+  ctx.lineWidth=light?2:2.5;ctx.lineCap='round';
+  ctx.beginPath();
+  for(const l of lines){ctx.moveTo(l.x1,l.y1);ctx.lineTo(l.x2,l.y2)}
+  ctx.stroke();
+}
+
+function draw(){
+  // Force-clear map rendering if on menu
+  const menuOverlay=document.getElementById('startOverlay');
+  if(menuOverlay.classList.contains('show')){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle=isLight()?'#ffffff':'#010409';
+    ctx.fillRect(0,0,COLS*CELL,ROWS*CELL);
+    return;
+  }
+  const light=isLight();
+  ctx.fillStyle=light?'#ffffff':'#010409';
+  ctx.fillRect(0,0,COLS*CELL,ROWS*CELL);
+  // Don't draw game content when showing menu overlay
+  const onMenu=document.getElementById('startOverlay').classList.contains('show');
+  if(!onMenu&&mapLines&&mapLines.length)drawMap(ctx,mapLines);
+  if(!onMenu){
+    for(const b of bullets)b.draw(ctx);
+    for(let i=explosions.length-1;i>=0;i--){
+      const p=explosions[i];p.x+=p.vx;p.y+=p.vy;p.life-=0.03;p.size*=0.97;
+      const a=Math.max(0,p.life);
+      ctx.globalAlpha=a;
+      if(p.flash){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0,p.size*p.life),0,Math.PI*2);ctx.fill()}
+      else{ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,Math.max(0,p.size*p.life),0,Math.PI*2);ctx.fill()}
+      ctx.globalAlpha=1;
+      if(p.life<=0)explosions.splice(i,1);
+    }
+    tanks.filter(t=>!t.alive).forEach(t=>t.draw(ctx));
+    tanks.filter(t=>t.alive).forEach(t=>t.draw(ctx));
+  }
+}
+
+// ======================== Input & Game Loop ========================
+document.addEventListener('keydown',e=>{
+  keys[e.key]=true;
+  if(e.key===' ')e.preventDefault();
+  if(['w','W','a','A','s','S','d','D','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter'].includes(e.key))e.preventDefault();
+});
+document.addEventListener('keyup',e=>{keys[e.key]=false});
+
+function handleInput(){
+  const p1=tanks[0];
+  if(p1&&p1.alive){
+    if(keys['a']||keys['A'])p1.dir-=TURN_SPEED;
+    if(keys['d']||keys['D'])p1.dir+=TURN_SPEED;
+    let mx=0,my=0;
+    if(keys['w']||keys['W']){mx=Math.cos(p1.dir)*p1.speed;my=Math.sin(p1.dir)*p1.speed}
+    if(keys['s']||keys['S']){mx=-Math.cos(p1.dir)*p1.speed*0.6;my=-Math.sin(p1.dir)*p1.speed*0.6}
+    if(mx!==0||my!==0){if(p1.canMove(p1.x+mx,p1.y+my,mapLines)){p1.x+=mx;p1.y+=my}else{for(const side of[1,-1]){const aDir=p1.dir+Math.PI/2*side;const sx=p1.x+Math.cos(aDir)*2.5;const sy=p1.y+Math.sin(aDir)*2.5;if(p1.canMove(sx,sy,mapLines)){p1.x=sx;p1.y=sy;break}}}}
+    if(keys[' '])p1.shoot();
+  }
+  if(gameMode==='pvp'){
+    const p2=tanks[1];
+    if(p2&&p2.alive){
+      if(keys['ArrowLeft'])p2.dir-=TURN_SPEED;
+      if(keys['ArrowRight'])p2.dir+=TURN_SPEED;
+      let mx=0,my=0;
+      if(keys['ArrowUp']){mx=Math.cos(p2.dir)*p2.speed;my=Math.sin(p2.dir)*p2.speed}
+      if(keys['ArrowDown']){mx=-Math.cos(p2.dir)*p2.speed*0.6;my=-Math.sin(p2.dir)*p2.speed*0.6}
+      if(mx!==0||my!==0){if(p2.canMove(p2.x+mx,p2.y+my,mapLines)){p2.x+=mx;p2.y+=my}else{for(const side of[1,-1]){const aDir=p2.dir+Math.PI/2*side;const sx=p2.x+Math.cos(aDir)*2.5;const sy=p2.y+Math.sin(aDir)*2.5;if(p2.canMove(sx,sy,mapLines)){p2.x=sx;p2.y=sy;break}}}}
+      if(keys['Enter'])p2.shoot();
+    }
+  }
+}
+
+function update(){
+  for(let i=bullets.length-1;i>=0;i--){bullets[i].update();if(!bullets[i].alive)bullets.splice(i,1)}
+  for(const t of tanks){if(t.alive)t.update()}
+  if(gameMode==='pvai'){const ai=tanks.find(t=>!t.isPlayer);if(ai&&ai.alive)ai.updateAI()}
+  updateUI();
+  draw();
+}
+
+function gameLoop(){
+  if(!gameRunning||gamePaused)return;
+  handleInput();update();draw();
+  const alive=tanks.filter(t=>t.alive);
+  if(alive.length===0&&bullets.length===0&&explosions.length===0&&endGameTimer===null){if(gameRunning)endGame(null)}
+}
+
+function gameLoopRunner(){
+  if(!gameRunning&&!gamePaused)return;
+  gameLoop();if(gameRunning||gamePaused)animFrame=requestAnimationFrame(gameLoopRunner);
+}
+
+// ======================== UI ========================
+function updateUI(){}
+
+// ======================== Game Flow ========================
+function initGame(){
+  canvas=document.getElementById('gameCanvas');
+  ctx=canvas.getContext('2d');
+  document.querySelectorAll('.mode-btn').forEach(btn=>{
+    btn.onclick=()=>{
+      document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');gameMode=btn.dataset.mode;
+      
+    };
+  });
+  mapLines=[];
+  if(!document.documentElement.getAttribute('data-theme'))document.documentElement.setAttribute('data-theme','dark');
+  applyLang('en');
+}
+
+function startGame(){
+  if(endGameTimer){clearTimeout(endGameTimer);endGameTimer=null}
+  initAudio();
+  // Pick a map not played recently
+  let newMap;
+  do { newMap = Math.floor(Math.random()*MAPS.length); }
+  while (lastMaps.includes(newMap) && lastMaps.length < MAPS.length);
+  lastMaps.push(newMap);
+  if (lastMaps.length > 2) lastMaps.shift();
+  currentMap = newMap;
+  bullets=[];explosions=[];gameRunning=true;gamePaused=false;
+  mapLines=buildLineSet(currentMap);
+  navGrid=buildNavGrid(mapLines);
+  function findSafeSpawn(nearX,nearY){
+    for(let attempt=0;attempt<200;attempt++){
+      const sx=nearX+(Math.random()-0.5)*120,sy=nearY+(Math.random()-0.5)*120;
+      const clampedX=Math.max(4,Math.min(COLS*CELL-TANK_WIDTH-4,sx));
+      const clampedY=Math.max(4,Math.min(ROWS*CELL-TANK_SIZE-4,sy));
+      let blocked=false;
+      for(const l of mapLines){
+        if(lineIntersectsRect(l.x1,l.y1,l.x2,l.y2,clampedX,clampedY,TANK_WIDTH,TANK_SIZE)){blocked=true;break}
+      }
+      if(!blocked){
+        // Also check that tank can actually move (not trapped)
+        const tempTank={x:clampedX,y:clampedY,width:TANK_WIDTH,size:TANK_SIZE};
+        let canEscape=false;
+        for(let a=0;a<8;a++){
+          const angle=a*Math.PI/4;
+          const ex=clampedX+Math.cos(angle)*20,ey=clampedY+Math.sin(angle)*20;
+          if(ex>=0&&ex<=COLS*CELL-TANK_WIDTH&&ey>=0&&ey<=ROWS*CELL-TANK_SIZE){
+            let hit=false;
+            for(const l of mapLines){
+              if(lineIntersectsRect(l.x1,l.y1,l.x2,l.y2,ex,ey,TANK_WIDTH,TANK_SIZE)){hit=true;break}
+            }
+            if(!hit){canEscape=true;break}
+          }
+        }
+        if(canEscape)return {x:clampedX,y:clampedY};
+      }
+    }
+    return {x:nearX,y:nearY};
+  }
+  const p1=findSafeSpawn(1*CELL,1*CELL);
+  const p2=findSafeSpawn((COLS-2)*CELL-TANK_SIZE,(ROWS-2)*CELL-TANK_SIZE);
+  tanks=[
+    new Tank(p1.x,p1.y,'#e33636',true),
+    new Tank(p2.x,p2.y,'#3670e3',gameMode==='pvp'),
+  ];
+  // Safety push-out: if tank is stuck in wall, nudge it out
+  for(const t of tanks){
+    for(let attempt=0;attempt<20;attempt++){
+      let stuck=false;
+      for(const l of mapLines){
+        if(lineIntersectsRect(l.x1,l.y1,l.x2,l.y2,t.x,t.y,TANK_WIDTH,TANK_SIZE)){stuck=true;break}
+      }
+      if(!stuck)break;
+      t.x+=Math.random()*20-10;t.y+=Math.random()*20-10;
+      t.x=Math.max(4,Math.min(COLS*CELL-TANK_WIDTH-4,t.x));
+      t.y=Math.max(4,Math.min(ROWS*CELL-TANK_SIZE-4,t.y));
+    }
+  }
+  document.getElementById('startOverlay').classList.remove('show');
+  document.getElementById('gameOverOverlay').classList.remove('show');
+  delete document.getElementById('winnerTitle').dataset.winnerKey;
+  delete document.getElementById('resultSub').dataset.resultFmt;
+  updateUI();
+  draw();
+  if(animFrame)cancelAnimationFrame(animFrame);
+  gameLoopRunner();
+}
+
+function endGame(winnerTank){
+  if(endGameTimer){clearTimeout(endGameTimer);endGameTimer=null}
+  gameRunning=false;
+  if(animFrame)cancelAnimationFrame(animFrame);
+  const overlay=document.getElementById('gameOverOverlay');
+  const title=document.getElementById('winnerTitle');
+  const sub=document.getElementById('resultSub');
+  const l=LANG[currentLang];
+  if(winnerTank&&winnerTank.alive){
+    if(gameMode==='pvai'){
+      if(winnerTank.isPlayer){title.textContent=l.playerWins;title.className='overlay-title red';title.dataset.winnerKey='playerWins'}
+      else{title.textContent=l.aiWins;title.className='overlay-title blue';title.dataset.winnerKey='aiWins'}
+    }else{
+      title.textContent=winnerTank===tanks[0]?l.p1Wins:l.p2Wins;
+      title.className='overlay-title '+(winnerTank===tanks[0]?'red':'blue');
+      title.dataset.winnerKey=winnerTank===tanks[0]?'p1Wins':'p2Wins';
+    }
+  }else{title.textContent=l.gameOver;title.className='overlay-title';title.style.color='var(--text)';delete title.dataset.winnerKey}
+  sub.textContent='';
+  overlay.classList.add('show');
+}
+
+function backToMenu(){
+  if(endGameTimer){clearTimeout(endGameTimer);endGameTimer=null}
+  gameRunning=false;gamePaused=false;
+  if(animFrame)cancelAnimationFrame(animFrame);
+  // Clear all game data first
+  tanks=[];bullets=[];explosions=[];mapLines=[];
+  document.getElementById('gameOverOverlay').classList.remove('show');
+  delete document.getElementById('winnerTitle').dataset.winnerKey;
+  delete document.getElementById('resultSub').dataset.resultFmt;
+  document.getElementById('startOverlay').classList.add('show');
+  let newMap;
+  do { newMap = Math.floor(Math.random()*MAPS.length); }
+  while (lastMaps.includes(newMap) && lastMaps.length < MAPS.length);
+  lastMaps.push(newMap);
+  if (lastMaps.length > 2) lastMaps.shift();
+  currentMap = newMap;
+  draw();
+}
+
+// ======================== Init ========================
+window.onload=function(){initGame()};
+</script>
+</body>
+</html>

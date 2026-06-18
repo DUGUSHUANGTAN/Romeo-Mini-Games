@@ -429,7 +429,7 @@ function getCellFromMouse(e) {
 }
 
 function revealCell(row, col) {
-    if (gameOver || flagged[row][col] || revealed[row][col]) return;
+    if (gameOver || flagged[row][col] || revealed[row][col]) return false;
     
     // First click - place mines and start timer
     if (firstClick) {
@@ -440,6 +440,12 @@ function revealCell(row, col) {
     }
     
     revealed[row][col] = true;
+    
+    // Hit mine
+    if (board[row][col] === -1) {
+        gameOver = true;
+        return true;
+    }
     
     // Flood fill for empty cells
     if (board[row][col] === 0) {
@@ -455,6 +461,7 @@ function revealCell(row, col) {
     }
     
     drawBoard();
+    return false;
 }
 
 function toggleFlag(row, col) {
@@ -470,7 +477,14 @@ canvas.addEventListener('click', (e) => {
     if (!cell) return;
     
     e.preventDefault();
-    revealCell(cell.row, cell.col);
+    const hitMine = revealCell(cell.row, cell.col);
+    
+    if (hitMine) {
+        document.getElementById('reset-btn').textContent = '😵';
+        revealAllMines();
+    } else {
+        checkWin();
+    }
 });
 
 canvas.addEventListener('contextmenu', (e) => {
@@ -485,33 +499,39 @@ canvas.addEventListener('dblclick', (e) => {
     const cell = getCellFromMouse(e);
     if (!cell || !revealed[cell.row][cell.col] || board[cell.row][cell.col] <= 0) return;
     
-    // Count adjacent flags
+    // Count adjacent flags and covered cells
     let flagCount = 0;
+    let coveredCount = 0;
     for (let dr = -1; dr <= 1; dr++) {
         for (let dc = -1; dc <= 1; dc++) {
             const nr = cell.row + dr;
             const nc = cell.col + dc;
             if (nr >= 0 && nr < board.length && nc >= 0 && nc < board[0].length) {
                 if (flagged[nr][nc]) flagCount++;
+                if (!revealed[nr][nc] && !flagged[nr][nc]) coveredCount++;
             }
         }
     }
     
-    // Auto-reveal if flag count matches number
-    if (flagCount === board[cell.row][cell.col]) {
+    const num = board[cell.row][cell.col];
+    const flagsNeeded = num - flagCount;
+    
+    // Auto-reveal if all remaining mines are flagged or all remaining cells are mines
+    if (flagsNeeded <= coveredCount && flagsNeeded >= 0) {
         for (let dr = -1; dr <= 1; dr++) {
             for (let dc = -1; dc <= 1; dc++) {
                 const nr = cell.row + dr;
                 const nc = cell.col + dc;
                 if (nr >= 0 && nr < board.length && nc >= 0 && nc < board[0].length) {
                     if (!flagged[nr][nc] && !revealed[nr][nc]) {
-                        revealCell(nr, nc);
+                        const hitMine = revealCell(nr, nc);
                         
-                        // Hit mine
-                        if (board[nr][nc] === -1) {
+                        if (hitMine) {
                             gameOver = true;
-                            revealAllMines();
                             document.getElementById('reset-btn').textContent = '😵';
+                            revealAllMines();
+                            drawBoard();
+                            return;
                         }
                     }
                 }
@@ -522,6 +542,8 @@ canvas.addEventListener('dblclick', (e) => {
 });
 
 function checkWin() {
+    if (gameOver) return;
+    
     const config = difficulties[currentDifficulty];
     let unrevealedSafeCells = 0;
     

@@ -44,7 +44,7 @@ canvas{display:block;image-rendering:pixelated}
 </head>
 <body>
 <div class="top-bar">
-<button class="toggle-btn" id="langToggle" title="Switch language">EN/中</button>
+<button class="toggle-btn" id="langToggle" title="Switch language">EN</button>
 <button class="toggle-btn" id="themeToggle" title="Toggle theme">🌙</button>
 </div>
 
@@ -100,7 +100,7 @@ function setLanguage(lang) {
     document.getElementById('btn-hard').textContent = t.hard;
     document.getElementById('label-auto-flag').textContent = t.autoFlag;
     document.getElementById('instructions').innerHTML = t.instructions;
-    document.getElementById('langToggle').textContent = lang === 'zh' ? 'EN/中' : '中/EN';
+    document.getElementById('langToggle').textContent = lang === 'zh' ? '中文' : 'EN';
 }
 document.getElementById('langToggle').addEventListener('click', () => setLanguage(currentLang === 'zh' ? 'en' : 'zh'));
 

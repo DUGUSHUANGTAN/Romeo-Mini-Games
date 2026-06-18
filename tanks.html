@@ -45,7 +45,7 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
 </head>
 <body>
 <div class="top-bar">
-<button class="toggle-btn" id="langToggle" title="Switch language">EN/中</button>
+<button class="toggle-btn" id="langToggle" title="Switch language">EN</button>
 <button class="toggle-btn" id="themeToggle" title="Toggle theme"><span class="icon">🌙</span></button>
 </div>
 <div class="game-wrapper">
@@ -115,7 +115,7 @@ function applyLang(lang) {
   if (resultSub.dataset.resultFmt && tanks.length >= 2) {
 
   }
-  document.getElementById('langToggle').textContent = lang === 'zh' ? 'EN/中' : '中/EN';
+  document.getElementById('langToggle').textContent = lang === 'zh' ? '中文' : 'EN';
   updateUI();
   draw();
 }

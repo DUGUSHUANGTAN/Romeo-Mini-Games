@@ -310,7 +310,6 @@ body {
 }
 
 </style>
-  <link rel="icon" type="image/png" href="../assets/logo.png">
 </head>
 <body>
 <div class="top-bar">
@@ -947,7 +946,7 @@ if (new URLSearchParams(window.location.search).has('clear')) {
 }
 // Listen for messages from parent (main page)
 window.addEventListener('message', function(e) {
-  let d = e.data;
+  var d = e.data;
   if (!d || !d.type) return;
   if (d.type === 'themeChange' && d.theme) {
     document.documentElement.setAttribute('data-theme', d.theme);
@@ -983,25 +982,25 @@ window.addEventListener('message', function(e) {
 (function() {
   if (!('ontouchstart' in window) && navigator.maxTouchPoints <= 0) return;
   document.body.classList.add('is-touch');
-  let ctrl = document.getElementById('tetrisTouchControls');
+  var ctrl = document.getElementById('tetrisTouchControls');
   if (!ctrl) return;
-  let holdInterval = null;
+  var holdInterval = null;
   function trigger(action) {
     if (!gameRunning || gamePaused || clearingAnimation) return;
     switch(action) {
       case 'left': {
-        let l = currentPiece.shape.map(function(p){ return [p[0]-1, p[1]] });
+        var l = currentPiece.shape.map(function(p){ return [p[0]-1, p[1]] });
         if (!collides(l)) currentPiece.shape = l;
         break;
       }
       case 'right': {
-        let r = currentPiece.shape.map(function(p){ return [p[0]+1, p[1]] });
+        var r = currentPiece.shape.map(function(p){ return [p[0]+1, p[1]] });
         if (!collides(r)) currentPiece.shape = r;
         break;
       }
       case 'down': moveDown(); score += 1; updateDisplay(); break;
       case 'rotate': {
-        let rt = rotate(currentPiece);
+        var rt = rotate(currentPiece);
         if (rt) currentPiece = rt;
         break;
       }
@@ -1022,9 +1021,9 @@ window.addEventListener('message', function(e) {
     if (holdInterval) { clearInterval(holdInterval); holdInterval = null; }
   }
   ctrl.addEventListener('touchstart', function(e) {
-    let btn = e.target.closest('.touch-btn');
+    var btn = e.target.closest('.touch-btn');
     if (!btn) return; e.preventDefault();
-    let action = btn.dataset.action;
+    var action = btn.dataset.action;
     trigger(action);
     if (action === 'left' || action === 'right' || action === 'down') startHold(action);
   }, {passive: false});
@@ -1032,9 +1031,9 @@ window.addEventListener('message', function(e) {
   ctrl.addEventListener('touchcancel', stopHold, {passive: true});
   // Mouse support for devtools touch emulation
   ctrl.addEventListener('mousedown', function(e) {
-    let btn = e.target.closest('.touch-btn');
+    var btn = e.target.closest('.touch-btn');
     if (!btn) return; e.preventDefault();
-    let action = btn.dataset.action;
+    var action = btn.dataset.action;
     trigger(action);
     if (action === 'left' || action === 'right' || action === 'down') startHold(action);
   });

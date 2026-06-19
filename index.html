@@ -310,7 +310,6 @@ body {
 }
 
 </style>
-  <link rel="icon" type="image/png" href="assets/logo.png">
 </head>
 <body>
 
@@ -400,7 +399,7 @@ function toggleTheme() {
   html.setAttribute('data-theme', isLight ? 'dark' : 'light');
   document.querySelector('#themeToggle .icon').textContent = isLight ? '🌙' : '☀️';
   try { localStorage.setItem('game-theme', isLight ? 'dark' : 'light'); } catch(e) {}
-  let ifr = document.getElementById('gameIframe');
+  var ifr = document.getElementById('gameIframe');
   if (ifr && ifr.contentWindow) ifr.contentWindow.postMessage({ type: 'themeChange', theme: isLight ? 'dark' : 'light' }, '*');
 }
 
@@ -409,7 +408,7 @@ document.getElementById('langToggle').addEventListener('click', () => {
   const newLang = currentLang === 'en' ? 'zh' : 'en';
   try { localStorage.setItem('game-lang', newLang); } catch(e) {}
   applyLang(newLang);
-  let ifr = document.getElementById('gameIframe');
+  var ifr = document.getElementById('gameIframe');
   if (ifr && ifr.contentWindow) ifr.contentWindow.postMessage({ type: 'langChange', lang: newLang }, '*');
 });
 
@@ -468,7 +467,7 @@ function openGame(url, title) {
   document.getElementById('gameOverlay').classList.add('active');
   document.body.style.overflow = 'hidden';
   iframe.onload = function() {
-    let w = iframe.contentWindow;
+    var w = iframe.contentWindow;
     if (!w) return;
     w.postMessage({ type: 'themeChange', theme: document.documentElement.getAttribute('data-theme') || 'dark' }, '*');
     w.postMessage({ type: 'langChange', lang: currentLang || 'en' }, '*');
@@ -492,7 +491,7 @@ document.addEventListener('keydown', function(e) {
 
 // Listen for messages from iframe games
 window.addEventListener('message', function(e) {
-  let d = e.data;
+  var d = e.data;
   if (!d || !d.type) return;
   if (d.type === 'themeChange' && d.theme) {
     document.documentElement.setAttribute('data-theme', d.theme);

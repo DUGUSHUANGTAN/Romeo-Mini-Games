@@ -56,7 +56,6 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
 
 .footer{position:fixed;bottom:12px;left:16px;color:var(--text-secondary);font-size:11px;opacity:0.5;z-index:100}
 </style>
-  <link rel="icon" type="image/png" href="../assets/logo.png">
 </head>
 <body>
 <div class="top-bar">
@@ -790,7 +789,7 @@ if (new URLSearchParams(window.location.search).has('clear')) {
 }
 // Listen for messages from parent (main page)
 window.addEventListener('message', function(e) {
-  let d = e.data;
+  var d = e.data;
   if (!d || !d.type) return;
   if (d.type === 'themeChange' && d.theme) {
     document.documentElement.setAttribute('data-theme', d.theme);

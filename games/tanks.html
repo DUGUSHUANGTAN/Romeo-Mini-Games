@@ -102,6 +102,7 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
     .touch-controls { gap: 4px; padding: 8px; }
 }
 </style>
+  <link rel="icon" type="image/png" href="../assets/logo.png">
 </head>
 <body>
 <div class="top-bar">
@@ -1067,7 +1068,7 @@ function initGame(){
 }
 // Listen for messages from parent (main page)
 window.addEventListener('message', function(e) {
-  var d = e.data;
+  let d = e.data;
   if (!d || !d.type) return;
   if (d.type === 'themeChange' && d.theme) {
     document.documentElement.setAttribute('data-theme', d.theme);
@@ -1221,18 +1222,18 @@ window.onload=function(){initGame()};
 (function() {
   if (!('ontouchstart' in window) && navigator.maxTouchPoints <= 0) return;
   document.body.classList.add('is-touch');
-  var ctrl = document.getElementById('tanksTouchControls');
+  let ctrl = document.getElementById('tanksTouchControls');
   if (!ctrl) return;
-  var p2Group = document.getElementById('p2TouchGroup');
+  let p2Group = document.getElementById('p2TouchGroup');
 
-  var origStart = startGame;
+  let origStart = startGame;
   startGame = function() {
     if (p2Group) p2Group.style.display = gameMode === 'pvp' ? 'flex' : 'none';
     return origStart.apply(this, arguments);
   };
 
   window.touchKeys = {};
-  var holdIntervals = {};
+  let holdIntervals = {};
 
   function startHold(key) {
     stopHold(key);
@@ -1245,8 +1246,8 @@ window.onload=function(){initGame()};
     if (holdIntervals[key]) { clearInterval(holdIntervals[key]); delete holdIntervals[key]; }
   }
 
-  var p1Map = { turnl: 'a', fwd: 'w', bwd: 's', turnr: 'd', fire: ' ' };
-  var p2Map = { left: 'ArrowLeft', up: 'ArrowUp', down: 'ArrowDown', right: 'ArrowRight', fire: 'Enter' };
+  let p1Map = { turnl: 'a', fwd: 'w', bwd: 's', turnr: 'd', fire: ' ' };
+  let p2Map = { left: 'ArrowLeft', up: 'ArrowUp', down: 'ArrowDown', right: 'ArrowRight', fire: 'Enter' };
 
   function getAction(btn) {
     if (btn.dataset.p1) return { player: 1, key: p1Map[btn.dataset.p1] || btn.dataset.p1 };
@@ -1255,9 +1256,9 @@ window.onload=function(){initGame()};
   }
 
   ctrl.addEventListener('touchstart', function(e) {
-    var btn = e.target.closest('.touch-btn');
+    let btn = e.target.closest('.touch-btn');
     if (!btn) return; e.preventDefault();
-    var a = getAction(btn);
+    let a = getAction(btn);
     if (!a) return;
     window.touchKeys[a.key] = true;
     if (['a','d','w','s','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(a.key)) {
@@ -1266,9 +1267,9 @@ window.onload=function(){initGame()};
   }, {passive: false});
 
   ctrl.addEventListener('touchend', function(e) {
-    var btn = e.target.closest('.touch-btn');
+    let btn = e.target.closest('.touch-btn');
     if (!btn) return;
-    var a = getAction(btn);
+    let a = getAction(btn);
     if (!a) return;
     window.touchKeys[a.key] = false;
     stopHold(a.key);
@@ -1281,9 +1282,9 @@ window.onload=function(){initGame()};
 
   // Mouse fallback for devtools
   ctrl.addEventListener('mousedown', function(e) {
-    var btn = e.target.closest('.touch-btn');
+    let btn = e.target.closest('.touch-btn');
     if (!btn) return; e.preventDefault();
-    var a = getAction(btn);
+    let a = getAction(btn);
     if (!a) return;
     window.touchKeys[a.key] = true;
     if (['a','d','w','s','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(a.key)) {
@@ -1291,9 +1292,9 @@ window.onload=function(){initGame()};
     }
   });
   ctrl.addEventListener('mouseup', function(e) {
-    var btn = e.target.closest('.touch-btn');
+    let btn = e.target.closest('.touch-btn');
     if (!btn) return;
-    var a = getAction(btn);
+    let a = getAction(btn);
     if (!a) return;
     window.touchKeys[a.key] = false;
     stopHold(a.key);
@@ -1304,7 +1305,7 @@ window.onload=function(){initGame()};
   });
 
   // Merge touch keys into keyboard state
-  var origHandleInput = handleInput;
+  let origHandleInput = handleInput;
   handleInput = function() {
     Object.keys(window.touchKeys).forEach(function(k) {
       keys[k] = keys[k] || window.touchKeys[k];

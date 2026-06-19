@@ -43,6 +43,7 @@ canvas{display:block;image-rendering:pixelated}
 
 .footer{position:fixed;bottom:12px;left:16px;color:var(--text-secondary);font-size:11px;opacity:0.5;z-index:100}
 </style>
+  <link rel="icon" type="image/png" href="../assets/logo.png">
 </head>
 <body>
 <div class="top-bar">
@@ -353,20 +354,20 @@ document.getElementById('reset-btn').addEventListener('click', () => {
   document.body.classList.add('is-touch');
   canvas.style.touchAction = 'none';
 
-  var longPressTimer = null;
-  var longPressTriggered = false;
-  var touchStartX = 0, touchStartY = 0;
+  let longPressTimer = null;
+  let longPressTriggered = false;
+  let touchStartX = 0, touchStartY = 0;
 
   canvas.addEventListener('touchstart', function(e) {
     e.preventDefault();
-    var t = e.touches[0];
+    let t = e.touches[0];
     touchStartX = t.clientX;
     touchStartY = t.clientY;
     longPressTriggered = false;
     longPressTimer = setTimeout(function() {
       longPressTriggered = true;
       // Long press = flag
-      var cell = getCellFromTouch(t.clientX, t.clientY);
+      let cell = getCellFromTouch(t.clientX, t.clientY);
       if (cell) toggleFlag(cell.row, cell.col);
       if (navigator.vibrate) navigator.vibrate(20);
     }, 500);
@@ -374,7 +375,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
 
   canvas.addEventListener('touchmove', function(e) {
     e.preventDefault();
-    var t = e.touches[0];
+    let t = e.touches[0];
     if (Math.abs(t.clientX - touchStartX) > 10 || Math.abs(t.clientY - touchStartY) > 10) {
       if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
     }
@@ -385,9 +386,9 @@ document.getElementById('reset-btn').addEventListener('click', () => {
     if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
     if (longPressTriggered) return;
     // Short tap = reveal
-    var cell = getCellFromTouch(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    let cell = getCellFromTouch(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
     if (!cell) return;
-    var hitMine = revealCell(cell.row, cell.col);
+    let hitMine = revealCell(cell.row, cell.col);
     if (hitMine) { document.getElementById('reset-btn').textContent = '😵'; revealAllMines(); }
     else checkWin();
   }, {passive: false});
@@ -398,9 +399,9 @@ document.getElementById('reset-btn').addEventListener('click', () => {
   }, {passive: true});
 
   function getCellFromTouch(clientX, clientY) {
-    var rect = canvas.getBoundingClientRect();
-    var col = Math.floor((clientX - rect.left) / cellSize);
-    var row = Math.floor((clientY - rect.top) / cellSize);
+    let rect = canvas.getBoundingClientRect();
+    let col = Math.floor((clientX - rect.left) / cellSize);
+    let row = Math.floor((clientY - rect.top) / cellSize);
     if (row < 0 || row >= board.length || col < 0 || col >= board[0].length) return null;
     return { row: row, col: col };
   }
@@ -467,7 +468,7 @@ if (new URLSearchParams(window.location.search).has('clear')) {
 }
 // Listen for messages from parent (main page)
 window.addEventListener('message', function(e) {
-  var d = e.data;
+  let d = e.data;
   if (!d || !d.type) return;
   if (d.type === 'themeChange' && d.theme) {
     document.documentElement.setAttribute('data-theme', d.theme);

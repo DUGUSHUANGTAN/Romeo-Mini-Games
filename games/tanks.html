@@ -33,6 +33,74 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
 .start-title{font-size:32px;font-weight:700;margin-bottom:8px}
 
 .footer{position:fixed;bottom:12px;left:16px;color:var(--text-secondary);font-size:11px;opacity:0.5;z-index:100}
+
+/* Touch controls */
+.touch-controls {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 12px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
+    gap: 6px;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+.is-touch .touch-controls { display: flex; }
+.touch-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+.touch-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.touch-btn:active {
+    background: rgba(255,255,255,0.35);
+    transform: scale(0.92);
+}
+.touch-btn-fire {
+    width: 56px;
+    height: 56px;
+    font-size: 20px;
+    background: rgba(220, 50, 50, 0.4);
+    border-color: rgba(220, 50, 50, 0.6);
+}
+.touch-btn-fire:active {
+    background: rgba(220, 50, 50, 0.7);
+}
+.touch-btn-p2 {
+    background: rgba(50, 100, 220, 0.3);
+    border-color: rgba(50, 100, 220, 0.4);
+}
+.touch-btn-p2:active {
+    background: rgba(50, 100, 220, 0.6);
+}
+@media (max-width: 500px) {
+    .touch-btn { width: 44px; height: 44px; font-size: 14px; }
+    .touch-btn-fire { width: 50px; height: 50px; }
+    .touch-controls { gap: 4px; padding: 8px; }
+}
 </style>
 </head>
 <body>
@@ -383,7 +451,7 @@ class Tank {
     this.x=x;this.y=y;this.color=color;this.isPlayer=isPlayer;
     this.size=TANK_SIZE;this.width=TANK_WIDTH;
     this.dir=0;this.speed=TANK_SPEED;this.alive=true;
-    this.cooldown=0;this.cooldownMax=20;
+    this.cooldown=0;this.cooldownMax=30;
     this.score=0;this.shotsFired=0;
     this.moveDir=-1;this.moveTimer=0;this.shootTimer=0;
     // 寻路属性
@@ -588,12 +656,12 @@ class Tank {
     // 卡住了：尝试垂直 / 反向滑行
     for (const side of [1, -1]) {
       const sa = this.dir + Math.PI/2 * side;
-      const sx = this.x + Math.cos(sa) * speed * 0.8;
-      const sy = this.y + Math.sin(sa) * speed * 0.8;
+      const sx = this.x + Math.cos(sa) * speed;
+      const sy = this.y + Math.sin(sa) * speed;
       if (this.canMove(sx, sy, mapLines)) { this.x = sx; this.y = sy; return; }
     }
     // 反向
-    const bx = this.x - Math.cos(this.dir) * speed * 0.5;
+    const bx = this.x - Math.cos(this.dir) * speed;
     const by = this.y - Math.sin(this.dir) * speed * 0.5;
     if (this.canMove(bx, by, mapLines)) { this.x = bx; this.y = by; return; }
     
@@ -617,10 +685,11 @@ class Tank {
       // 沿子弹当前方向模拟飞行（最多模拟 600px 或 5 次反弹）
       let simX = b.x, simY = b.y, simVx = b.vx, simVy = b.vy;
       let hit = false;
-      for (let step = 0; step < 120; step++) { // 600px / 5px per step
+      let bounces = 0;
+      for (let step = 0; step < 200 && bounces <= 3; step++) { // 最多 3 次反弹
         simX += simVx * 5 / Math.sqrt(simVx*simVx + simVy*simVy);
         simY += simVy * 5 / Math.sqrt(simVx*simVx + simVy*simVy);
-        // 边界反弹
+        // 边界反弹（算一次反弹）
         if (simX < 0 || simX > 800 || simY < 0 || simY > 600) break;
         // 墙反弹
         let bounced = false;
@@ -641,14 +710,11 @@ class Tank {
             break;
           }
         }
+        if (bounced) { bounces++; continue; }
         // 检测模拟点是否离自己很近
         const toMeX = this.cx - simX, toMeY = this.cy - simY;
         if (Math.sqrt(toMeX*toMeX + toMeY*toMeY) < 30) {
           hit = true; break;
-        }
-        if (bounced) {
-          // 反弹后继续追踪最多 300px
-          if (step > 60) break;
         }
       }
       if (hit) {
@@ -671,11 +737,12 @@ class Tank {
     const enemyAimingAtMe = Math.abs(enemyAimDiff) < 0.5;
 
     const hasIncomingBullet = nearestBulletDist < 400;
-    const enemyTooClose = distToEnemy < 120;
-    const inDanger = enemyAimingAtMe || hasIncomingBullet || enemyTooClose;
+    const enemyTooClose = distToEnemy < 80;
+    const underFire = hasIncomingBullet; // 有子弹威胁，优先躲
+    const inDanger = hasIncomingBullet || (enemyAimingAtMe && enemyTooClose);
 
     // ---- BFS 寻路移动 ----
-    const speed = this.speed * 0.7;
+    const speed = this.speed;
     const distToGoal = this._path.length > 0
       ? Math.sqrt((this._path[this._path.length-1].x - this.cx)**2 + (this._path[this._path.length-1].y - this.cy)**2)
       : Infinity;
@@ -690,10 +757,10 @@ class Tank {
       this._stuckCount = 0;
       let goalX, goalY;
 
-      if (inDanger && nearestBulletEvade !== null) {
-        // 有子弹飞来：朝子弹垂直方向闪避 200px
-        goalX = Math.max(40, Math.min(760, this.cx + Math.cos(nearestBulletEvade) * 200));
-        goalY = Math.max(40, Math.min(560, this.cy + Math.sin(nearestBulletEvade) * 200));
+      if (underFire && nearestBulletEvade !== null) {
+        // 有子弹飞来：朝子弹垂直方向闪避 250px
+        goalX = Math.max(40, Math.min(760, this.cx + Math.cos(nearestBulletEvade) * 250));
+        goalY = Math.max(40, Math.min(560, this.cy + Math.sin(nearestBulletEvade) * 250));
       } else if (inDanger) {
         // 其他危险（被瞄准、太近）：朝敌人反方向撤退 250px
         goalX = Math.max(40, Math.min(760, this.cx + Math.cos(targetAngle + Math.PI) * 250));
@@ -722,6 +789,7 @@ class Tank {
     // 子弹飞来或危险时不射击
     const shouldNotShoot = inDanger || hasIncomingBullet;
     if(!shouldNotShoot && Math.abs(diff)<0.25 && this.shootTimer===0){
+      // 检查到玩家的视线是否被墙阻挡
       let lineOfSight=true;
       const steps=Math.max(4,Math.floor(distToEnemy/20));
       for(let i=1;i<steps;i++){
@@ -735,9 +803,54 @@ class Tank {
         }
         if(blocked){lineOfSight=false;break}
       }
-      if(lineOfSight){
+      // 模拟发射，判断击中玩家的概率是否大于击中自己的概率
+      let shouldShoot = lineOfSight;
+      if (lineOfSight) {
+        const bulletRadius = 4;
+        let selfHits = 0, enemyHits = 0;
+        // 模拟子弹路径（1 次反弹），检测是否能打中玩家或自己
+        let simX = this.cx + Math.cos(this.dir) * (this.size/2 + 2);
+        let simY = this.cy + Math.sin(this.dir) * (this.size/2 + 2);
+        let simVx = Math.cos(this.dir) * 6;
+        let simVy = Math.sin(this.dir) * 6;
+        let bounces = 0;
+        let hitEnemy = false, hitSelf = false;
+        for (let step = 0; step < 200 && bounces <= 1 && !hitEnemy && !hitSelf; step++) {
+          simX += simVx * 5 / Math.sqrt(simVx*simVx + simVy*simVy);
+          simY += simVy * 5 / Math.sqrt(simVx*simVx + simVy*simVy);
+          if (simX < 0 || simX > 800 || simY < 0 || simY > 600) break;
+          let bounced = false;
+          for (const l of mapLines) {
+            const ax = simX - l.x1, ay = simY - l.y1;
+            const wx = l.x2 - l.x1, wy = l.y2 - l.y1;
+            const wlen2 = wx*wx + wy*wy;
+            let t = (ax*wx + ay*wy) / (wlen2 || 1);
+            t = Math.max(0, Math.min(1, t));
+            const cx = l.x1 + t*wx, cy = l.y1 + t*wy;
+            const ddx = simX - cx, ddy = simY - cy;
+            const dist = Math.sqrt(ddx*ddx + ddy*ddy);
+            if (dist < bulletRadius + 1) {
+              const nx = ddx / dist || 0, ny = ddy / dist || 0;
+              const dot = simVx * nx + simVy * ny;
+              if (dot < 0) { simVx -= 2 * dot * nx; simVy -= 2 * dot * ny; }
+              bounced = true; break;
+            }
+          }
+          if (bounced) { bounces++; continue; }
+          // 检测是否离自己太近
+          const toMeX = this.cx - simX, toMeY = this.cy - simY;
+          const toEnemyX = enemy.cx - simX, toEnemyY = enemy.cy - simY;
+          if (Math.sqrt(toMeX*toMeX + toMeY*toMeY) < 10) hitSelf = true;
+          if (Math.sqrt(toEnemyX*toEnemyX + toEnemyY*toEnemyY) < 10) hitEnemy = true;
+        }
+        // 能打中玩家就打，除非确定会打中自己而不会打中玩家
+        if (hitEnemy) shouldShoot = true;
+        else if (hitSelf) shouldShoot = false;
+        else shouldShoot = lineOfSight;
+      }
+      if(shouldShoot){
         this.shoot();
-        this.shootTimer=20+Math.floor(Math.random()*10);
+        this.shootTimer=30;
       }
     }
 
@@ -895,7 +1008,7 @@ function handleInput(){
     if(keys['d']||keys['D'])p1.dir+=TURN_SPEED;
     let mx=0,my=0;
     if(keys['w']||keys['W']){mx=Math.cos(p1.dir)*p1.speed;my=Math.sin(p1.dir)*p1.speed}
-    if(keys['s']||keys['S']){mx=-Math.cos(p1.dir)*p1.speed*0.6;my=-Math.sin(p1.dir)*p1.speed*0.6}
+    if(keys['s']||keys['S']){mx=-Math.cos(p1.dir)*p1.speed;my=-Math.sin(p1.dir)*p1.speed}
     if(mx!==0||my!==0){if(p1.canMove(p1.x+mx,p1.y+my,mapLines)){p1.x+=mx;p1.y+=my}else{for(const side of[1,-1]){const aDir=p1.dir+Math.PI/2*side;const sx=p1.x+Math.cos(aDir)*2.5;const sy=p1.y+Math.sin(aDir)*2.5;if(p1.canMove(sx,sy,mapLines)){p1.x=sx;p1.y=sy;break}}}}
     if(keys[' '])p1.shoot();
   }
@@ -906,7 +1019,7 @@ function handleInput(){
       if(keys['ArrowRight'])p2.dir+=TURN_SPEED;
       let mx=0,my=0;
       if(keys['ArrowUp']){mx=Math.cos(p2.dir)*p2.speed;my=Math.sin(p2.dir)*p2.speed}
-      if(keys['ArrowDown']){mx=-Math.cos(p2.dir)*p2.speed*0.6;my=-Math.sin(p2.dir)*p2.speed*0.6}
+      if(keys['ArrowDown']){mx=-Math.cos(p2.dir)*p2.speed;my=-Math.sin(p2.dir)*p2.speed}
       if(mx!==0||my!==0){if(p2.canMove(p2.x+mx,p2.y+my,mapLines)){p2.x+=mx;p2.y+=my}else{for(const side of[1,-1]){const aDir=p2.dir+Math.PI/2*side;const sx=p2.x+Math.cos(aDir)*2.5;const sy=p2.y+Math.sin(aDir)*2.5;if(p2.canMove(sx,sy,mapLines)){p2.x=sx;p2.y=sy;break}}}}
       if(keys['Enter'])p2.shoot();
     }
@@ -1104,6 +1217,118 @@ function backToMenu(){
 
 // Init
 window.onload=function(){initGame()};
+// Touch controls
+(function() {
+  if (!('ontouchstart' in window) && navigator.maxTouchPoints <= 0) return;
+  document.body.classList.add('is-touch');
+  var ctrl = document.getElementById('tanksTouchControls');
+  if (!ctrl) return;
+  var p2Group = document.getElementById('p2TouchGroup');
+
+  var origStart = startGame;
+  startGame = function() {
+    if (p2Group) p2Group.style.display = gameMode === 'pvp' ? 'flex' : 'none';
+    return origStart.apply(this, arguments);
+  };
+
+  window.touchKeys = {};
+  var holdIntervals = {};
+
+  function startHold(key) {
+    stopHold(key);
+    holdIntervals[key] = setInterval(function() {
+      if (!window.touchKeys[key]) { stopHold(key); return; }
+      window.touchKeys[key] = true;
+    }, 100);
+  }
+  function stopHold(key) {
+    if (holdIntervals[key]) { clearInterval(holdIntervals[key]); delete holdIntervals[key]; }
+  }
+
+  var p1Map = { turnl: 'a', fwd: 'w', bwd: 's', turnr: 'd', fire: ' ' };
+  var p2Map = { left: 'ArrowLeft', up: 'ArrowUp', down: 'ArrowDown', right: 'ArrowRight', fire: 'Enter' };
+
+  function getAction(btn) {
+    if (btn.dataset.p1) return { player: 1, key: p1Map[btn.dataset.p1] || btn.dataset.p1 };
+    if (btn.dataset.p2) return { player: 2, key: p2Map[btn.dataset.p2] || btn.dataset.p2 };
+    return null;
+  }
+
+  ctrl.addEventListener('touchstart', function(e) {
+    var btn = e.target.closest('.touch-btn');
+    if (!btn) return; e.preventDefault();
+    var a = getAction(btn);
+    if (!a) return;
+    window.touchKeys[a.key] = true;
+    if (['a','d','w','s','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(a.key)) {
+      startHold(a.key);
+    }
+  }, {passive: false});
+
+  ctrl.addEventListener('touchend', function(e) {
+    var btn = e.target.closest('.touch-btn');
+    if (!btn) return;
+    var a = getAction(btn);
+    if (!a) return;
+    window.touchKeys[a.key] = false;
+    stopHold(a.key);
+  }, {passive: true});
+
+  ctrl.addEventListener('touchcancel', function() {
+    Object.keys(window.touchKeys).forEach(function(k) { window.touchKeys[k] = false; });
+    Object.keys(holdIntervals).forEach(function(k) { stopHold(k); });
+  }, {passive: true});
+
+  // Mouse fallback for devtools
+  ctrl.addEventListener('mousedown', function(e) {
+    var btn = e.target.closest('.touch-btn');
+    if (!btn) return; e.preventDefault();
+    var a = getAction(btn);
+    if (!a) return;
+    window.touchKeys[a.key] = true;
+    if (['a','d','w','s','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(a.key)) {
+      startHold(a.key);
+    }
+  });
+  ctrl.addEventListener('mouseup', function(e) {
+    var btn = e.target.closest('.touch-btn');
+    if (!btn) return;
+    var a = getAction(btn);
+    if (!a) return;
+    window.touchKeys[a.key] = false;
+    stopHold(a.key);
+  });
+  ctrl.addEventListener('mouseleave', function() {
+    Object.keys(window.touchKeys).forEach(function(k) { window.touchKeys[k] = false; });
+    Object.keys(holdIntervals).forEach(function(k) { stopHold(k); });
+  });
+
+  // Merge touch keys into keyboard state
+  var origHandleInput = handleInput;
+  handleInput = function() {
+    Object.keys(window.touchKeys).forEach(function(k) {
+      keys[k] = keys[k] || window.touchKeys[k];
+    });
+    return origHandleInput.apply(this, arguments);
+  };
+})();
+
 </script>
+<div class="touch-controls" id="tanksTouchControls">
+    <div class="touch-group">
+        <button class="touch-btn p1-turnl" data-p1="turnl" aria-label="左转">↺</button>
+        <button class="touch-btn p1-fwd" data-p1="fwd" aria-label="前进">▲</button>
+        <button class="touch-btn p1-bwd" data-p1="bwd" aria-label="后退">▼</button>
+        <button class="touch-btn p1-turnr" data-p1="turnr" aria-label="右转">↻</button>
+        <button class="touch-btn touch-btn-fire p1-fire" data-p1="fire" aria-label="射击">💥</button>
+    </div>
+    <div class="touch-group" id="p2TouchGroup" style="display:none;">
+        <button class="touch-btn touch-btn-p2 p2-left" data-p2="left" aria-label="P2 左">◀</button>
+        <button class="touch-btn touch-btn-p2 p2-up" data-p2="up" aria-label="P2 前进">▲</button>
+        <button class="touch-btn touch-btn-p2 p2-down" data-p2="down" aria-label="P2 后退">▼</button>
+        <button class="touch-btn touch-btn-p2 p2-right" data-p2="right" aria-label="P2 右">▶</button>
+        <button class="touch-btn touch-btn-p2 touch-btn-fire p2-fire" data-p2="fire" aria-label="P2 射击">💥</button>
+    </div>
+</div>
 </body>
 </html>

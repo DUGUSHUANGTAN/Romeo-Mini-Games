@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title id="page-title">Tetris</title>
 <style>
+canvas { touch-action: none; }
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
@@ -252,6 +254,61 @@ body {
     width: auto;
     padding: 10px 24px;
 }
+
+/* Touch controls */
+.touch-controls {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
+    background: var(--panel-bg);
+    backdrop-filter: blur(24px) saturate(170%);
+    -webkit-backdrop-filter: blur(24px) saturate(170%);
+    border-top: 1px solid var(--panel-border);
+}
+.is-touch .touch-controls { display: flex; }
+.is-touch .keyboard-hint { display: none; }
+.touch-btn {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 1px solid var(--panel-border);
+    background: var(--btn-secondary-bg);
+    color: var(--text);
+    font-size: 22px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    transition: transform 0.1s, background 0.1s;
+    -webkit-tap-highlight-color: transparent;
+}
+.touch-btn:active {
+    transform: scale(0.9);
+    background: var(--btn-secondary-hover);
+}
+.touch-btn-wide {
+    width: 72px;
+    border-radius: 28px;
+    font-size: 18px;
+    font-weight: 600;
+}
+@media (max-width: 500px) {
+    .game-wrapper { padding-bottom: 76px; }
+    .touch-btn { width: 48px; height: 48px; font-size: 18px; }
+    .touch-btn-wide { width: 60px; font-size: 15px; }
+}
+
 </style>
 </head>
 <body>
@@ -260,6 +317,15 @@ body {
     <button class="toggle-btn" id="themeToggle" title="切换主题">
         <span class="icon">🌙</span>
     </button>
+</div>
+
+
+<div class="touch-controls" id="tetrisTouchControls">
+    <button class="touch-btn" data-action="left" aria-label="Move left">◀</button>
+    <button class="touch-btn" data-action="down" aria-label="Soft drop">▼</button>
+    <button class="touch-btn" data-action="right" aria-label="Move right">▶</button>
+    <button class="touch-btn" data-action="rotate" aria-label="Rotate">↻</button>
+    <button class="touch-btn touch-btn-wide" data-action="hardDrop" aria-label="Hard drop">⤓</button>
 </div>
 
 <div class="game-wrapper">
@@ -296,7 +362,7 @@ body {
             <div class="value-display" id="linesDisplay">0</div>
         </div>
         
-        <div class="panel-box glass-panel controls-info">
+        <div class="panel-box glass-panel controls-info keyboard-hint">
             <h3 data-lang-key="controls">Controls</h3>
             <span class="key">←→</span> <span data-lang-key="move">Move</span><br>
             <span class="key">↑</span> <span data-lang-key="rotate">Rotate</span><br>
@@ -911,6 +977,70 @@ window.addEventListener('message', function(e) {
         }
     } catch(e) {}
 })();
+
+// Touch controls
+(function() {
+  if (!('ontouchstart' in window) && navigator.maxTouchPoints <= 0) return;
+  document.body.classList.add('is-touch');
+  var ctrl = document.getElementById('tetrisTouchControls');
+  if (!ctrl) return;
+  var holdInterval = null;
+  function trigger(action) {
+    if (!gameRunning || gamePaused || clearingAnimation) return;
+    switch(action) {
+      case 'left': {
+        var l = currentPiece.shape.map(function(p){ return [p[0]-1, p[1]] });
+        if (!collides(l)) currentPiece.shape = l;
+        break;
+      }
+      case 'right': {
+        var r = currentPiece.shape.map(function(p){ return [p[0]+1, p[1]] });
+        if (!collides(r)) currentPiece.shape = r;
+        break;
+      }
+      case 'down': moveDown(); score += 1; updateDisplay(); break;
+      case 'rotate': {
+        var rt = rotate(currentPiece);
+        if (rt) currentPiece = rt;
+        break;
+      }
+      case 'hardDrop': hardDrop(); break;
+    }
+    draw();
+  }
+  function startHold(action) {
+    if (holdInterval) clearInterval(holdInterval);
+    holdInterval = setInterval(function() {
+      if (!gameRunning || gamePaused || clearingAnimation) {
+        clearInterval(holdInterval); holdInterval = null; return;
+      }
+      trigger(action);
+    }, 100);
+  }
+  function stopHold() {
+    if (holdInterval) { clearInterval(holdInterval); holdInterval = null; }
+  }
+  ctrl.addEventListener('touchstart', function(e) {
+    var btn = e.target.closest('.touch-btn');
+    if (!btn) return; e.preventDefault();
+    var action = btn.dataset.action;
+    trigger(action);
+    if (action === 'left' || action === 'right' || action === 'down') startHold(action);
+  }, {passive: false});
+  ctrl.addEventListener('touchend', stopHold, {passive: true});
+  ctrl.addEventListener('touchcancel', stopHold, {passive: true});
+  // Mouse support for devtools touch emulation
+  ctrl.addEventListener('mousedown', function(e) {
+    var btn = e.target.closest('.touch-btn');
+    if (!btn) return; e.preventDefault();
+    var action = btn.dataset.action;
+    trigger(action);
+    if (action === 'left' || action === 'right' || action === 'down') startHold(action);
+  });
+  ctrl.addEventListener('mouseup', stopHold);
+  ctrl.addEventListener('mouseleave', stopHold);
+})();
+
 draw();
 </script>
 <div style="position:fixed;bottom:12px;left:16px;color:var(--text-secondary);font-size:11px;opacity:0.5;z-index:100;" data-lang-key="footer">Romeo 的俄罗斯方块</div>

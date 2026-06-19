@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title id="page-title">扫雷游戏</title>
 <style>
+canvas { touch-action: none; }
+
 *{margin:0;padding:0;box-sizing:border-box}
 
 :root{--bg:#0d1117;--panel-bg:rgba(22,27,34,0.65);--panel-border:rgba(48,54,61,0.7);--text:#c9d1d9;--text-secondary:#8b949e;--cell-bg:#21262d;--cell-revealed:#161b22;--cell-hover:rgba(110,118,129,0.4);--cell-mine:#f85149;--cell-flag:#d29922;--cell-number-1:#58a6ff;--cell-number-2:#3fb950;--cell-number-3:#f85149;--cell-number-4:#a371f7;--cell-number-5:#db6d28;--cell-number-6:#1f6feb;--cell-number-7:#f778ba;--cell-number-8:#7ee787;--btn-bg:#238636;--btn-hover:#2ea043;--btn-secondary-bg:rgba(48,54,61,0.6);--btn-secondary-hover:rgba(63,70,79,0.8);--glass-highlight:rgba(255,255,255,0.06);--overlay-bg:rgba(1,4,9,0.85)}
@@ -259,6 +261,8 @@ function revealCell(row, col, sound = true) {
             }
     }
     drawBoard();
+    // 自动标雷
+    if (document.getElementById('auto-flag-toggle').checked && !gameOver) autoFlagMines();
     return false;
 }
 
@@ -266,6 +270,8 @@ function toggleFlag(row, col) {
     if (gameOver || revealed[row][col]) return;
     flagged[row][col] = !flagged[row][col];
     playFlag(); updateMineCounter(); drawBoard();
+    // 自动标雷
+    if (document.getElementById('auto-flag-toggle').checked && !gameOver) autoFlagMines();
 }
 
 canvas.addEventListener('click', (e) => {
@@ -340,12 +346,73 @@ document.getElementById('reset-btn').addEventListener('click', () => {
     initBoard(); drawBoard(); document.getElementById('reset-btn').textContent = '😊';
 });
 
+
+// Touch device detection + long press flagging
+(function() {
+  if (!('ontouchstart' in window) && navigator.maxTouchPoints <= 0) return;
+  document.body.classList.add('is-touch');
+  canvas.style.touchAction = 'none';
+
+  var longPressTimer = null;
+  var longPressTriggered = false;
+  var touchStartX = 0, touchStartY = 0;
+
+  canvas.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+    var t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    longPressTriggered = false;
+    longPressTimer = setTimeout(function() {
+      longPressTriggered = true;
+      // Long press = flag
+      var cell = getCellFromTouch(t.clientX, t.clientY);
+      if (cell) toggleFlag(cell.row, cell.col);
+      if (navigator.vibrate) navigator.vibrate(20);
+    }, 500);
+  }, {passive: false});
+
+  canvas.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+    var t = e.touches[0];
+    if (Math.abs(t.clientX - touchStartX) > 10 || Math.abs(t.clientY - touchStartY) > 10) {
+      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    }
+  }, {passive: false});
+
+  canvas.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    if (longPressTriggered) return;
+    // Short tap = reveal
+    var cell = getCellFromTouch(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+    if (!cell) return;
+    var hitMine = revealCell(cell.row, cell.col);
+    if (hitMine) { document.getElementById('reset-btn').textContent = '😵'; revealAllMines(); }
+    else checkWin();
+  }, {passive: false});
+
+  canvas.addEventListener('touchcancel', function() {
+    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+    longPressTriggered = false;
+  }, {passive: true});
+
+  function getCellFromTouch(clientX, clientY) {
+    var rect = canvas.getBoundingClientRect();
+    var col = Math.floor((clientX - rect.left) / cellSize);
+    var row = Math.floor((clientY - rect.top) / cellSize);
+    if (row < 0 || row >= board.length || col < 0 || col >= board[0].length) return null;
+    return { row: row, col: col };
+  }
+})();
+
+
 document.querySelectorAll('[data-difficulty]').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('[data-difficulty]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         currentDifficulty = btn.dataset.difficulty;
-        initBoard(); drawBoard();
+        initBoard(); drawBoard(); document.getElementById('reset-btn').textContent = '😊';
     });
 });
 

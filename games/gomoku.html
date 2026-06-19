@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title id="page-title">Gomoku</title>
 <style>
+canvas { touch-action: none; }
+
 *{margin:0;padding:0;box-sizing:border-box}
 
 :root{
@@ -88,6 +90,14 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
 
 <div class="footer" data-lang-key="footer">Romeo的五子棋</div>
 
+
+// Touch device detection
+(function() {
+  if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
+    document.body.classList.add('is-touch');
+    document.getElementById('gameCanvas').style.touchAction = 'none';
+  }
+})();
 <script>
 // i18n
 const LANG = {

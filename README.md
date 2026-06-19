@@ -4,7 +4,7 @@
 
 ## 🚀 快速开始
 
-双击 `Romeo's Mini Games.html` 打开主界面，选择一个游戏即可开始。
+双击 `index.html` 打开主界面，选择一个游戏即可开始。
 
 ## 🕹️ 游戏
 
@@ -56,7 +56,7 @@
 
 ```
 Game 1/
-├── Romeo's Mini Games.html    # 主界面入口
+├── index.html    # 主界面入口
 ├── games/                     # 游戏文件
 │   ├── tetris.html
 │   ├── gomoku.html

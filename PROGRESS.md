@@ -14,7 +14,7 @@
 ## 📋 项目结构
 ```
 Game 1/
-├── Romeo's Mini Games.html    # 主界面（入口）
+├── index.html    # 主界面（入口）
 ├── games/                     # 游戏文件
 │   ├── tetris.html
 │   ├── gomoku.html

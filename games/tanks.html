@@ -233,7 +233,7 @@ function playHit() {
 
 // Game Constants
 const COLS = 20, ROWS = 15, CELL = 40;
-const TANK_SIZE = 18, TANK_WIDTH = 26, BULLET_SPEED = 6, TANK_SPEED = 3, TURN_SPEED = 0.08;
+const TANK_SIZE = 18, TANK_WIDTH = 26, BULLET_SPEED = 10, TANK_SPEED = 4.5, TURN_SPEED = 0.12;
 
 // Maps (5 open-layout maps, no closed loops)
 const MAPS = [
@@ -451,7 +451,7 @@ class Tank {
     this.x=x;this.y=y;this.color=color;this.isPlayer=isPlayer;
     this.size=TANK_SIZE;this.width=TANK_WIDTH;
     this.dir=0;this.speed=TANK_SPEED;this.alive=true;
-    this.cooldown=0;this.cooldownMax=30;
+    this.cooldown=0;
     this.score=0;this.shotsFired=0;
     this.moveDir=-1;this.moveTimer=0;this.shootTimer=0;
     // 寻路属性
@@ -507,15 +507,18 @@ class Tank {
     return true;
   }
   shoot(){
-    if(this.cooldown>0||!this.alive)return false;
-    this.cooldown=this.cooldownMax;this.shotsFired++;
+    const now = performance.now();
+    if(this._lastShotTime === undefined) this._lastShotTime = 0;
+    if(now - this._lastShotTime < 500) return false;
+    this._lastShotTime = now;
+    this.shotsFired++;
     const angle=this.dir;
     const bx=this.cx+Math.cos(angle)*(this.size/2+2);
     const by=this.cy+Math.sin(angle)*(this.size/2+2);
     bullets.push(new Bullet(bx,by,angle,this));
     playShoot();return true;
   }
-  update(){if(this.cooldown>0)this.cooldown--}
+  update(){}
 
   // ---- BFS 网格寻路 ----
   // 用 CELL/2 = 20px 网格，坦克中心点穿过网格时检测是否与墙碰撞

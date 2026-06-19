@@ -104,7 +104,6 @@ body {
     transform: translateY(0);
 }
 
-
 .game-wrapper {
     display: flex;
     gap: 24px;
@@ -406,12 +405,14 @@ function toggleTheme() {
     try { localStorage.setItem('game-theme', isLight ? 'dark' : 'light'); } catch(e) {}
     draw();
     drawNext();
+    try { parent.postMessage({ type: 'themeChange', theme: isLight ? 'dark' : 'light' }, '*'); } catch(e) {}
 }
 document.getElementById('themeToggle').addEventListener('click', toggleTheme);
 document.getElementById('langToggle').addEventListener('click', () => {
     const newLang = currentLang === 'en' ? 'zh' : 'en';
     try { localStorage.setItem('game-lang', newLang); } catch(e) {}
     applyLang(newLang);
+    try { parent.postMessage({ type: 'langChange', lang: newLang }, '*'); } catch(e) {}
 });
 
 // Shapes
@@ -874,16 +875,34 @@ document.addEventListener('keydown', (e) => {
     draw();
 });
 
-// Clear cached preferences if ?clear=true (for testing defaults)
 if (new URLSearchParams(window.location.search).has('clear')) {
     try { localStorage.removeItem('game-theme'); localStorage.removeItem('game-lang'); } catch(e) {}
 }
+// Listen for messages from parent (main page)
+window.addEventListener('message', function(e) {
+  var d = e.data;
+  if (!d || !d.type) return;
+  if (d.type === 'themeChange' && d.theme) {
+    document.documentElement.setAttribute('data-theme', d.theme);
+    document.querySelector('#themeToggle .icon').textContent = d.theme === 'light' ? '☀️' : '🌙';
+    try { localStorage.setItem('game-theme', d.theme); } catch(e) {}
+    if (typeof draw === 'function') draw();
+  }
+  if (d.type === 'langChange' && d.lang && typeof applyLang === 'function') {
+    applyLang(d.lang);
+    try { localStorage.setItem('game-lang', d.lang); } catch(e) {}
+  }
+});
+
 // Load saved preferences from localStorage
 (function() {
     try {
         const savedTheme = localStorage.getItem('game-theme');
         if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
         else document.documentElement.setAttribute('data-theme', 'dark');
+        // Sync theme toggle icon to match
+        const themeIcon = document.querySelector('#themeToggle .icon');
+        if (themeIcon) themeIcon.textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '☀️' : '🌙';
         const savedLang = localStorage.getItem('game-lang');
         if (savedLang && (savedLang === 'en' || savedLang === 'zh')) {
             applyLang(savedLang);

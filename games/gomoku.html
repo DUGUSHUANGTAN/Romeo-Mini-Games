@@ -89,7 +89,7 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
 <div class="footer" data-lang-key="footer">Romeo的五子棋</div>
 
 <script>
-// ======================== i18n ========================
+// i18n
 const LANG = {
   en: {
     title:'Gomoku',pvai:'Player vs AI',pvp:'P1 vs P2',startGame:'Start Game',
@@ -124,9 +124,10 @@ document.getElementById('langToggle').addEventListener('click', () => {
   const newLang = currentLang === 'en' ? 'zh' : 'en';
   try { localStorage.setItem('game-lang', newLang); } catch(e) {}
   applyLang(newLang);
+  try { parent.postMessage({ type: 'langChange', lang: newLang }, '*'); } catch(e) {}
 });
 
-// ======================== Theme ========================
+// Theme
 function toggleTheme() {
   const html = document.documentElement;
   const isLight = html.getAttribute('data-theme') === 'light';
@@ -135,11 +136,12 @@ function toggleTheme() {
   try { localStorage.setItem('game-theme', isLight ? 'dark' : 'light'); } catch(e) {}
   // Redraw canvas to update board colors and piece effects
   draw();
+  try { parent.postMessage({ type: 'themeChange', theme: isLight ? 'dark' : 'light' }, '*'); } catch(e) {}
 }
 
 document.getElementById('themeToggle').addEventListener('click', toggleTheme);
 
-// ======================== Game Constants ========================
+// Game Constants
 let canvas = document.getElementById('gameCanvas');
 let ctx = canvas ? canvas.getContext('2d') : null;
 
@@ -151,7 +153,7 @@ const CANVAS_SIZE = CELL_SIZE * (LINE_COUNT - 1) + PADDING * 2;
 canvas.width = CANVAS_SIZE;
 canvas.height = CANVAS_SIZE;
 
-// ======================== Game State ========================
+// Game State
 let gameMode = 'pvai'; // 'pvai' | 'pvp'
 let board = [];       // 0=empty, 1=black, 2=white
 let currentPlayer = 1; // 1=black, 2=white
@@ -160,7 +162,7 @@ let winner = null;
 let lastMove = null;   // {x, y}
 let firstClick = true;
 
-// ======================== Mode Selection ========================
+// Mode Selection
 document.querySelectorAll('.mode-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -169,7 +171,7 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
   });
 });
 
-// ======================== Overlay Management ========================
+// Overlay Management
 function showMenu() {
   document.getElementById('menuOverlay').classList.add('show');
   document.getElementById('gameOverOverlay').classList.remove('show');
@@ -199,8 +201,7 @@ function showGameOver(w) {
   document.getElementById('gameOverOverlay').classList.add('show');
 }
 
-
-// ======================== Audio ========================
+// Audio
 let audioCtx = null;
 function initAudio() { if (!audioCtx) try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} }
 function playPlace() {
@@ -270,7 +271,7 @@ function backToMenu() {
   showMenu();
 }
 
-// ======================== Drawing Functions ========================
+// Drawing Functions
 function getCSS(prop) {
   return getComputedStyle(document.documentElement).getPropertyValue(prop).trim();
 }
@@ -536,7 +537,7 @@ function draw() {
   drawStatusBar();
 }
 
-// ======================== Game Logic ========================
+// Game Logic
 function canvasToBoard(mx, my) {
   const x = Math.round((mx - PADDING) / CELL_SIZE);
   const y = Math.round((my - PADDING) / CELL_SIZE);
@@ -642,7 +643,7 @@ function drawWinLine(x, y, color) {
   return false;
 }
 
-// ======================== AI ========================
+// AI
 const OFFSET = [[1,0],[0,1],[1,1],[1,-1]];
 
 function aiDrop() {
@@ -763,7 +764,7 @@ function analyzeLine(x, y, dx, dy, color) {
   return { count, openEnds, blocked, score };
 }
 
-// ======================== Initial Draw ========================
+// Initial Draw
 // Canvas stays in DOM - menu overlay covers it
 canvas = document.getElementById('gameCanvas');
 if (canvas) {
@@ -773,16 +774,34 @@ if (canvas) {
   // Draw empty board so menu overlay covers a clean board
   drawEmptyBoard();
 }
-// Clear cached preferences if ?clear=true (for testing defaults)
 if (new URLSearchParams(window.location.search).has('clear')) {
     try { localStorage.removeItem('game-theme'); localStorage.removeItem('game-lang'); } catch(e) {}
 }
+// Listen for messages from parent (main page)
+window.addEventListener('message', function(e) {
+  var d = e.data;
+  if (!d || !d.type) return;
+  if (d.type === 'themeChange' && d.theme) {
+    document.documentElement.setAttribute('data-theme', d.theme);
+    document.querySelector('#themeToggle .icon').textContent = d.theme === 'light' ? '☀️' : '🌙';
+    try { localStorage.setItem('game-theme', d.theme); } catch(e) {}
+    if (typeof draw === 'function') draw();
+  }
+  if (d.type === 'langChange' && d.lang && typeof applyLang === 'function') {
+    applyLang(d.lang);
+    try { localStorage.setItem('game-lang', d.lang); } catch(e) {}
+  }
+});
+
 // Load saved preferences from localStorage
 (function() {
     try {
         const savedTheme = localStorage.getItem('game-theme');
         if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
         else document.documentElement.setAttribute('data-theme', 'dark');
+        // Sync theme toggle icon to match
+        const themeIcon = document.querySelector('#themeToggle .icon');
+        if (themeIcon) themeIcon.textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '☀️' : '🌙';
         const savedLang = localStorage.getItem('game-lang');
         if (savedLang && (savedLang === 'en' || savedLang === 'zh')) {
             applyLang(savedLang);

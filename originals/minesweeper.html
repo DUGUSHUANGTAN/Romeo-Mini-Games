@@ -403,6 +403,11 @@ if (new URLSearchParams(window.location.search).has('clear')) {
         const savedTheme = localStorage.getItem('game-theme');
         if (savedTheme) setTheme(savedTheme);
         else setTheme('dark');
+        // Update theme icon to match current theme
+        try {
+            const iconEl = document.getElementById('themeToggle');
+            if (iconEl) iconEl.textContent = document.documentElement.getAttribute('data-theme') === 'light' ? '☀️' : '🌙';
+        } catch(e) {}
         const savedLang = localStorage.getItem('game-lang');
         if (savedLang && (savedLang === 'en' || savedLang === 'zh')) setLanguage(savedLang);
         else setLanguage('en');

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Romeo's Mini Games</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #0d1117;
+  --panel-bg: rgba(22,27,34,0.65);
+  --panel-border: rgba(48,54,61,0.7);
+  --text: #c9d1d9;
+  --text-secondary: #8b949e;
+  --btn-bg: #238636;
+  --btn-hover: #2ea043;
+  --btn-secondary-bg: rgba(48,54,61,0.6);
+  --btn-secondary-hover: rgba(63,70,79,0.8);
+  --glass-highlight: rgba(255,255,255,0.06);
+  --overlay-bg: rgba(1,4,9,0.85);
+  --card-bg: rgba(22,27,34,0.5);
+  --card-hover-border: rgba(88,166,255,0.5);
+  --card-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  --accent: #58a6ff;
+}
+
+[data-theme="light"] {
+  --bg: #f6f8fa;
+  --panel-bg: rgba(255,255,255,0.65);
+  --panel-border: rgba(208,215,222,0.7);
+  --text: #1f2328;
+  --text-secondary: #656d76;
+  --btn-bg: #1f883d;
+  --btn-hover: #2c974b;
+  --btn-secondary-bg: rgba(208,215,222,0.6);
+  --btn-secondary-hover: rgba(188,195,204,0.8);
+  --glass-highlight: rgba(255,255,255,0.5);
+  --overlay-bg: rgba(255,255,255,0.9);
+  --card-bg: rgba(255,255,255,0.5);
+  --card-hover-border: rgba(9,105,218,0.4);
+  --card-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  --accent: #0969da;
+}
+
+body {
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  color: var(--text);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* ========== Top Bar ========== */
+.top-bar {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 6px;
+  z-index: 100;
+}
+
+.toggle-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  box-shadow: inset 0 1px 0 var(--glass-highlight), 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.toggle-btn:hover {
+  border-color: var(--text-secondary);
+  transform: translateY(-1px);
+}
+
+.toggle-btn:active {
+  transform: translateY(0);
+}
+
+.lang-btn {
+  width: auto;
+  padding: 0 8px;
+  letter-spacing: 0.3px;
+}
+
+/* ========== Main Container ========== */
+.container {
+  text-align: center;
+  padding: 40px 20px;
+  width: 100%;
+  max-width: 600px;
+}
+
+/* ========== Title ========== */
+.portal-logo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  cursor: pointer;
+}
+
+.portal-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.portal-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 40px;
+}
+
+/* ========== Game Grid ========== */
+.game-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.game-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 28px 20px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  border: 1px solid var(--panel-border);
+  box-shadow: var(--card-shadow);
+  text-decoration: none;
+  color: var(--text);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--glass-highlight), transparent);
+  pointer-events: none;
+}
+
+.game-card:hover {
+  border-color: var(--card-hover-border);
+  transform: translateY(-4px);
+  box-shadow: var(--card-shadow), 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.game-card:active {
+  transform: translateY(-2px);
+}
+
+
+
+.game-card .game-icon {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.game-card .game-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* ========== Footer Watermark ========== */
+.footer {
+  position: fixed;
+  bottom: 12px;
+  left: 16px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  opacity: 0.5;
+  z-index: 100;
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 480px) {
+  .game-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .container {
+    padding: 24px 16px;
+  }
+  .portal-title {
+    font-size: 22px;
+  }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+}
+
+@keyframes heartFloat {
+  0% { opacity: 1; transform: translateY(0) scale(0.3); }
+  30% { opacity: 1; transform: translateY(-30px) scale(1); }
+  100% { opacity: 0; transform: translateY(-100px) scale(0.6); }
+}
+
+.love-particle {
+  position: fixed;
+  pointer-events: none;
+  font-size: 22px;
+  z-index: 9999;
+  animation: heartFloat 1.8s ease-out forwards;
+}
+
+.shake-anim {
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-2px); }
+}
+
+@keyframes heartFloat {
+  0% { opacity: 1; transform: translateY(0) scale(0.3); }
+  30% { opacity: 1; transform: translateY(-30px) scale(1); }
+  100% { opacity: 0; transform: translateY(-100px) scale(0.6); }
+}
+
+.love-particle {
+  position: fixed;
+  pointer-events: none;
+  font-size: 22px;
+  z-index: 9999;
+  animation: heartFloat 1.8s ease-out forwards;
+}
+
+.shake-anim {
+  animation: shake 0.4s ease;
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <button class="toggle-btn lang-btn" id="langToggle" >EN</button>
+  <button class="toggle-btn" id="themeToggle"><span class="icon">☀️</span></button>
+</div>
+
+<div class="container">
+  <img class="portal-logo" id="portalLogo" src="assets/logo.png" alt="Romeo's Logo">
+  <h1 class="portal-title" data-lang-key="title">Romeo's Mini Games</h1>
+  <p class="portal-subtitle" data-lang-key="subtitle">Classic games, rebuilt with modern web tech.</p>
+  <div class="game-grid">
+    <a class="game-card" href="tetris.html">
+      <img class="game-icon" src="assets/tetris.png" alt="Tetris">
+      <span class="game-name" data-lang-key="gameTetris">Tetris</span>
+    </a>
+    <a class="game-card" href="gomoku.html">
+      <img class="game-icon" src="assets/gomoku.png" alt="Gomoku">
+      <span class="game-name" data-lang-key="gameGomoku">Gomoku</span>
+    </a>
+    <a class="game-card" href="tanks.html">
+      <img class="game-icon" src="assets/tanks.png" alt="Tank Battle">
+      <span class="game-name" data-lang-key="gameTanks">Tank Battle</span>
+    </a>
+    <a class="game-card" href="minesweeper.html">
+      <img class="game-icon" src="assets/minesweeper.png" alt="Minesweeper">
+      <span class="game-name" data-lang-key="gameMinesweeper">Minesweeper</span>
+    </a>
+  </div>
+</div>
+
+<div class="footer" data-lang-key="footer">Romeo's Mini Games</div>
+
+<script>
+const LANG = {
+  en: {
+    title: "Romeo's Mini Games",
+    subtitle: "Classic games, rebuilt with modern web tech.",
+    gameTetris: "Tetris",
+    gameGomoku: "Gomoku",
+    gameTanks: "Tank Battle",
+    gameMinesweeper: "Minesweeper",
+    footer: "Romeo's Mini Games",
+  },
+  zh: {
+    title: "Romeo 的迷你游戏",
+    subtitle: "经典游戏，用现代 Web 技术重新构建。",
+    gameTetris: "俄罗斯方块",
+    gameGomoku: "五子棋",
+    gameTanks: "坦克大战",
+    gameMinesweeper: "扫雷",
+    footer: "Romeo 的迷你游戏",
+  }
+};
+
+let currentLang = 'en';
+
+function applyLang(lang) {
+  currentLang = lang;
+  const t = LANG[lang];
+  document.querySelectorAll('[data-lang-key]').forEach(el => {
+    const key = el.dataset.langKey;
+    if (t[key] !== undefined) {
+      el.textContent = t[key];
+    }
+  });
+  document.title = t.title;
+  document.getElementById('langToggle').textContent = lang === 'zh' ? '中文' : 'EN';
+  document.documentElement.lang = lang === 'zh' ? 'zh' : 'en';
+}
+
+// ======================== Theme ========================
+function toggleTheme() {
+  const html = document.documentElement;
+  const isLight = html.getAttribute('data-theme') === 'light';
+  html.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  document.querySelector('#themeToggle .icon').textContent = isLight ? '🌙' : '☀️';
+  try { localStorage.setItem('game-theme', isLight ? 'dark' : 'light'); } catch(e) {}
+}
+
+// ======================== Language ========================
+document.getElementById('langToggle').addEventListener('click', () => {
+  const newLang = currentLang === 'en' ? 'zh' : 'en';
+  try { localStorage.setItem('game-lang', newLang); } catch(e) {}
+  applyLang(newLang);
+});
+
+document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+// ======================== Easter Egg ========================
+let logoClickCount = 0;
+let logoClickTimer = null;
+
+document.getElementById('portalLogo').addEventListener('click', function(e) {
+  logoClickCount++;
+  
+  // 3 秒内没点满 10 次重置
+  clearTimeout(logoClickTimer);
+  logoClickTimer = setTimeout(() => { logoClickCount = 0; }, 3000);
+  
+  if (logoClickCount >= 10) {
+    logoClickCount = 0;
+    spawnHearts(e);
+  }
+});
+
+function spawnHearts(e) {
+  const logo = e.currentTarget;
+  // 抖动效果
+  logo.classList.remove('shake-anim');
+  void logo.offsetWidth;
+  logo.classList.add('shake-anim');
+  
+  setTimeout(() => {
+    const emojis = ['💗', '💖', '🩷', '💕', '🫶'];
+    const rect = logo.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    
+    for (let i = 0; i < 16; i++) {
+      const heart = document.createElement('div');
+      heart.className = 'love-particle';
+      heart.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 10 + Math.random() * 30;
+      heart.style.left = (cx + Math.cos(angle) * dist - 11) + 'px';
+      heart.style.top = (cy + Math.sin(angle) * dist - 11) + 'px';
+      heart.style.animationDelay = (Math.random() * 0.4) + 's';
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 2500);
+    }
+  }, 400);
+}
+
+// ======================== Init ========================
+(function init() {
+  // Restore theme
+  try {
+    const savedTheme = localStorage.getItem('game-theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+    // Update theme icon to match current theme
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    document.querySelector('#themeToggle .icon').textContent = isLight ? '☀️' : '🌙';
+  } catch(e) {}
+
+  // Restore language
+  try {
+    const savedLang = localStorage.getItem('game-lang');
+    if (savedLang === 'en' || savedLang === 'zh') {
+      applyLang(savedLang);
+    } else {
+      applyLang('en');
+    }
+  } catch(e) {
+    applyLang('en');
+  }
+})();
+</script>
+</body>
+</html>

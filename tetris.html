@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tetris</title>
+<title id="page-title">Tetris</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -19,8 +19,6 @@
     --btn-hover: #2ea043;
     --btn-pause: #f85149;
     --btn-pause-hover: #f87171;
-    --btn-resume: #d29922;
-    --btn-resume-hover: #e3b341;
     --btn-resume: #d29922;
     --btn-resume-hover: #e3b341;
 
@@ -45,8 +43,6 @@
     --btn-hover: #2c974b;
     --btn-pause: #cf222e;
     --btn-pause-hover: #a40e26;
-    --btn-resume: #9a6700;
-    --btn-resume-hover: #bf8700;
     --btn-resume: #9a6700;
     --btn-resume-hover: #bf8700;
 
@@ -325,6 +321,7 @@ const BLOCK_SIZE = 30;
 // i18n
 const LANG = {
     en: {
+        title: 'Tetris',
         gameOver: 'Game Over',
         playAgain: 'Play Again',
         startGame: 'Start Game',
@@ -343,6 +340,7 @@ const LANG = {
         finalScore: 'Score: '
     },
     zh: {
+        title: '俄罗斯方块',
         gameOver: '游戏结束',
         playAgain: '重新开始',
         startGame: '开始游戏',
@@ -372,6 +370,7 @@ function applyLang(lang) {
         if (t[key]) el.textContent = t[key];
     });
     document.getElementById('langToggle').textContent = lang === 'zh' ? '中文' : 'EN';
+    document.title = t.title;
     // Update pause button text based on current state
     if (gameRunning) {
         document.getElementById('pauseBtn').textContent = gamePaused ? t.resume : t.pause;
@@ -395,12 +394,15 @@ function toggleTheme() {
     const isLight = html.getAttribute('data-theme') === 'light';
     html.setAttribute('data-theme', isLight ? 'dark' : 'light');
     document.querySelector('#themeToggle .icon').textContent = isLight ? '🌙' : '☀️';
+    try { localStorage.setItem('game-theme', isLight ? 'dark' : 'light'); } catch(e) {}
     draw();
     drawNext();
 }
 document.getElementById('themeToggle').addEventListener('click', toggleTheme);
 document.getElementById('langToggle').addEventListener('click', () => {
-    applyLang(currentLang === 'en' ? 'zh' : 'en');
+    const newLang = currentLang === 'en' ? 'zh' : 'en';
+    try { localStorage.setItem('game-lang', newLang); } catch(e) {}
+    applyLang(newLang);
 });
 
 // Shapes
@@ -863,7 +865,15 @@ document.addEventListener('keydown', (e) => {
     draw();
 });
 
-applyLang('en');
+// Load saved preferences from localStorage
+(function() {
+    try {
+        const savedTheme = localStorage.getItem('game-theme');
+        if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+        const savedLang = localStorage.getItem('game-lang');
+        if (savedLang && (savedLang === 'en' || savedLang === 'zh')) applyLang(savedLang);
+    } catch(e) {}
+})();
 draw();
 </script>
 <div style="position:fixed;bottom:12px;left:16px;color:var(--text-secondary);font-size:11px;opacity:0.5;z-index:100;">Romeo的俄罗斯方块</div>

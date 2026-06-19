@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -101,8 +101,13 @@ function setLanguage(lang) {
     document.getElementById('label-auto-flag').textContent = t.autoFlag;
     document.getElementById('instructions').innerHTML = t.instructions;
     document.getElementById('langToggle').textContent = lang === 'zh' ? '中文' : 'EN';
+    try { localStorage.setItem('game-lang', lang); } catch(e) {}
 }
-document.getElementById('langToggle').addEventListener('click', () => setLanguage(currentLang === 'zh' ? 'en' : 'zh'));
+document.getElementById('langToggle').addEventListener('click', () => {
+    const newLang = currentLang === 'zh' ? 'en' : 'zh';
+    try { localStorage.setItem('game-lang', newLang); } catch(e) {}
+    setLanguage(newLang);
+});
 
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
@@ -232,16 +237,17 @@ function getCellFromMouse(e) {
     return { row, col };
 }
 
-function revealCell(row, col) {
+function revealCell(row, col, sound = true) {
     if (gameOver || flagged[row][col] || revealed[row][col]) return false;
     if (firstClick) { placeMines(row, col); firstClick = false; startTimer(); }
     revealed[row][col] = true;
-    if (board[row][col] === -1) { gameOver = true; if (timerInterval) clearInterval(timerInterval); return true; }
+    if (sound) playReveal();
+    if (board[row][col] === -1) { gameOver = true; if (timerInterval) clearInterval(timerInterval); playBoom(); return true; }
     if (board[row][col] === 0) {
         for (let dr = -1; dr <= 1; dr++)
             for (let dc = -1; dc <= 1; dc++) {
                 const nr = row + dr, nc = col + dc;
-                if (nr >= 0 && nr < board.length && nc >= 0 && nc < board[0].length) revealCell(nr, nc);
+                if (nr >= 0 && nr < board.length && nc >= 0 && nc < board[0].length) revealCell(nr, nc, false);
             }
     }
     drawBoard();
@@ -251,7 +257,7 @@ function revealCell(row, col) {
 function toggleFlag(row, col) {
     if (gameOver || revealed[row][col]) return;
     flagged[row][col] = !flagged[row][col];
-    updateMineCounter(); drawBoard();
+    playFlag(); updateMineCounter(); drawBoard();
 }
 
 canvas.addEventListener('click', (e) => {
@@ -306,6 +312,7 @@ function checkWin() {
             if (!revealed[r][c] && board[r][c] !== -1) return;
     gameOver = true;
     if (timerInterval) clearInterval(timerInterval);
+    playWin();
     document.getElementById('reset-btn').textContent = '🏆';
     for (let r = 0; r < config.rows; r++)
         for (let c = 0; c < config.cols; c++)
@@ -370,14 +377,67 @@ function setTheme(theme) {
     currentTheme = theme;
     document.documentElement.setAttribute('data-theme', theme);
     document.getElementById('themeToggle').textContent = theme === 'dark' ? '🌙' : '☀️';
+    try { localStorage.setItem('game-theme', theme); } catch(e) {}
     if (board.length > 0) drawBoard();
 }
-document.getElementById('themeToggle').addEventListener('click', () => setTheme(currentTheme === 'dark' ? 'light' : 'dark'));
+document.getElementById('themeToggle').addEventListener('click', () => {
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    try { localStorage.setItem('game-theme', newTheme); } catch(e) {}
+    setTheme(newTheme);
+});
 
-setTheme('dark');
-setLanguage('en');
+// Load saved preferences from localStorage
+(function() {
+    try {
+        const savedTheme = localStorage.getItem('game-theme');
+        if (savedTheme) setTheme(savedTheme);
+        else setTheme('dark');
+        const savedLang = localStorage.getItem('game-lang');
+        if (savedLang && (savedLang === 'en' || savedLang === 'zh')) setLanguage(savedLang);
+        else setLanguage('en');
+    } catch(e) {}
+})();
 initBoard();
 drawBoard();
+
+// ======================== Audio ========================
+let audioCtx = null;
+function initAudio() { if (!audioCtx) try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} }
+function playReveal() {
+  try{initAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.connect(g);g.connect(audioCtx.destination);o.type='sine';
+  o.frequency.setValueAtTime(800,audioCtx.currentTime);
+  g.gain.setValueAtTime(0.08,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.06);
+  o.start();o.stop(audioCtx.currentTime+0.06)}catch(e){}
+}
+function playWin() {
+  try{initAudio();[400,500,600,800].forEach((f,i)=>{
+    const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+    o.connect(g);g.connect(audioCtx.destination);o.type='sine';
+    o.frequency.setValueAtTime(f,audioCtx.currentTime+i*0.1);
+    g.gain.setValueAtTime(0.12,audioCtx.currentTime+i*0.1);
+    g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+i*0.1+0.15);
+    o.start(audioCtx.currentTime+i*0.1);o.stop(audioCtx.currentTime+i*0.1+0.15)})
+  }catch(e){}
+}
+function playBoom() {
+  try{initAudio();const b=audioCtx.createBufferSource();
+  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*0.4,audioCtx.sampleRate);
+  const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
+  b.buffer=buf;const g=audioCtx.createGain();b.connect(g);g.connect(audioCtx.destination);
+  g.gain.setValueAtTime(0.12,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.4);b.start()}catch(e){}
+}
+function playFlag() {
+  try{initAudio();const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.connect(g);g.connect(audioCtx.destination);o.type='triangle';
+  o.frequency.setValueAtTime(300,audioCtx.currentTime);
+  g.gain.setValueAtTime(0.08,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.05);
+  o.start();o.stop(audioCtx.currentTime+0.05)}catch(e){}
+}
+
 </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tank Battle</title>
+<title id="page-title">Tank Battle</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0d1117;--panel-bg:rgba(22,27,34,0.65);--panel-border:rgba(48,54,61,0.7);--text:#c9d1d9;--text-secondary:#8b949e;--btn-bg:#238636;--btn-hover:#2ea043;--btn-resume:#d29922;--btn-resume-hover:#e3b341;--btn-secondary-bg:rgba(48,54,61,0.6);--btn-secondary-hover:rgba(63,70,79,0.8);--glass-highlight:rgba(255,255,255,0.06);--overlay-bg:rgba(1,4,9,0.85);--key-bg:rgba(48,54,61,0.6);--key-border:rgba(48,54,61,0.8);--board-bg:#010409}
@@ -13,12 +13,6 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
 .toggle-btn{width:30px;height:30px;border-radius:6px;border:1px solid var(--panel-border);background:var(--panel-bg);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s ease;box-shadow:inset 0 1px 0 var(--glass-highlight),0 4px 12px rgba(0,0,0,0.2)}
 .toggle-btn:hover{background:var(--btn-secondary-hover);transform:translateY(-1px)}
 .game-wrapper{display:flex;justify-content:center;align-items:center}
-
-
-
-
-
-
 
 .game-container{position:relative;background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:12px;box-shadow:inset 0 1px 0 var(--glass-highlight),0 8px 32px rgba(0,0,0,0.3);padding:4px}
 canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
@@ -75,7 +69,7 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
 // ======================== Language ========================
 const LANG = {
   en: {
-    tankBattle:'Tank Battle',p1:'P1',p2:'P2',p1Score:'Score: 0',p2Score:'Score: 0',
+    title:'Tank Battle',tankBattle:'Tank Battle',p1:'P1',p2:'P2',p1Score:'Score: 0',p2Score:'Score: 0',
     controls:'Controls',fwdBack:'Fwd/Back',turn:'Turn',shoot:'Shoot',
     startGame:'Start Game',playAgain:'Play Again',menu:'Menu',
     gameInfo:'Info',status:'Status',ready:'Ready',
@@ -84,7 +78,7 @@ const LANG = {
     totalShots:'Total Shots:',gameOver:'Game Over',minimap:'Minimap',score:'Score:'
   },
   zh: {
-    tankBattle:'坦克大战',p1:'玩家1',p2:'玩家2',p1Score:'分数: 0',p2Score:'分数: 0',
+    title:'坦克大战',tankBattle:'坦克大战',p1:'玩家1',p2:'玩家2',p1Score:'分数: 0',p2Score:'分数: 0',
     controls:'操作',fwdBack:'前进/后退',turn:'转向',shoot:'射击',
     startGame:'开始游戏',playAgain:'重新开始',menu:'返回菜单',
     gameInfo:'信息',status:'状态',ready:'就绪',
@@ -116,6 +110,7 @@ function applyLang(lang) {
 
   }
   document.getElementById('langToggle').textContent = lang === 'zh' ? '中文' : 'EN';
+  document.title = t.title;
   updateUI();
   draw();
 }
@@ -126,12 +121,15 @@ function toggleTheme() {
   const isLight = html.getAttribute('data-theme') === 'light';
   html.setAttribute('data-theme', isLight ? 'dark' : 'light');
   document.querySelector('#themeToggle .icon').textContent = isLight ? '🌙' : '☀️';
+  try { localStorage.setItem('game-theme', isLight ? 'dark' : 'light'); } catch(e) {}
   applyLang(currentLang);
 }
 
 document.getElementById('themeToggle').addEventListener('click', toggleTheme);
 document.getElementById('langToggle').addEventListener('click', () => {
-  applyLang(currentLang === 'en' ? 'zh' : 'en');
+  const newLang = currentLang === 'en' ? 'zh' : 'en';
+  try { localStorage.setItem('game-lang', newLang); } catch(e) {}
+  applyLang(newLang);
 });
 
 // ======================== Audio ========================
@@ -951,7 +949,15 @@ function initGame(){
   });
   mapLines=[];
   if(!document.documentElement.getAttribute('data-theme'))document.documentElement.setAttribute('data-theme','dark');
-  applyLang('en');
+  // Load saved preferences from localStorage
+(function() {
+    try {
+        const savedTheme = localStorage.getItem('game-theme');
+        if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+        const savedLang = localStorage.getItem('game-lang');
+        if (savedLang && (savedLang === 'en' || savedLang === 'zh')) applyLang(savedLang);
+    } catch(e) {}
+})();
 }
 
 function startGame(){

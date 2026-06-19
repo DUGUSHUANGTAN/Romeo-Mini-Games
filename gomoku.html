@@ -86,7 +86,7 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
   </div>
 </div>
 
-<div class="footer">Romeo的五子棋</div>
+<div class="footer" data-lang-key="footer">Romeo的五子棋</div>
 
 <script>
 // ======================== i18n ========================
@@ -94,12 +94,12 @@ const LANG = {
   en: {
     title:'Gomoku',pvai:'Player vs AI',pvp:'P1 vs P2',startGame:'Start Game',
     playAgain:'Play Again',menu:'Menu',gameOver:'Game Over',blackTurn:"Black's Turn",
-    whiteTurn:"White's Turn",blackWins:'Black Wins!',whiteWins:'White Wins!',modePvai:'Player vs AI',modePvp:'PvP'
+    whiteTurn:"White's Turn",blackWins:'Black Wins!',whiteWins:'White Wins!',modePvai:'Player vs AI',modePvp:'PvP',footer:"Romeo's Gomoku"
   },
   zh: {
     title:'五子棋',pvai:'人机对战',pvp:'玩家对战',startGame:'开始游戏',
     playAgain:'再来一局',menu:'返回菜单',gameOver:'游戏结束',blackTurn:'黑方落子',
-    whiteTurn:'白方落子',blackWins:'黑方获胜！',whiteWins:'白方获胜！',modePvai:'人机',modePvp:'双人对战'
+    whiteTurn:'白方落子',blackWins:'黑方获胜！',whiteWins:'白方获胜！',modePvai:'人机',modePvp:'双人对战',footer:'Romeo 的五子棋'
   }
 };
 
@@ -773,13 +773,22 @@ if (canvas) {
   // Draw empty board so menu overlay covers a clean board
   drawEmptyBoard();
 }
+// Clear cached preferences if ?clear=true (for testing defaults)
+if (new URLSearchParams(window.location.search).has('clear')) {
+    try { localStorage.removeItem('game-theme'); localStorage.removeItem('game-lang'); } catch(e) {}
+}
 // Load saved preferences from localStorage
 (function() {
     try {
         const savedTheme = localStorage.getItem('game-theme');
         if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+        else document.documentElement.setAttribute('data-theme', 'dark');
         const savedLang = localStorage.getItem('game-lang');
-        if (savedLang && (savedLang === 'en' || savedLang === 'zh')) applyLang(savedLang);
+        if (savedLang && (savedLang === 'en' || savedLang === 'zh')) {
+            applyLang(savedLang);
+        } else {
+            applyLang('en');
+        }
     } catch(e) {}
 })();
 bindCanvasEvents(canvas);

@@ -341,3 +341,117 @@ if (new URLSearchParams(window.location.search).has('clear')) {
 3. **移动端适配：** 当前所有游戏为桌面端设计，需添加触摸控制和响应式布局
 4. **音效系统统一：** 各游戏独立实现 Web Audio API，可抽取公共 `playSound()` 函数
 5. **难度配置外部化：** 将地雷数、棋盘大小等硬编码参数提取到配置文件
+
+---
+
+## 十二、Canvas 游戏开发经验教训（2026-06-19）
+
+### 1. Canvas 文字不响应 `data-lang-key`
+
+**问题：** `<canvas>` 上绘制的文字（状态栏、提示等）不在 DOM 树中，`applyLang()` 遍历 `[data-lang-key]` 时无法更新它们。
+
+**教训：**
+- Canvas 上的所有文本必须通过 `draw()` 函数从 LANG 字典重新读取
+- `applyLang(lang)` 末尾必须调用 `draw()` 重绘 Canvas
+- **不要**在 Canvas 上写硬编码字符串，统一走 `LANG[currentLang]`
+
+### 2. `gameOver` 变量必须在判定赢棋时立即设为 true
+
+**问题：** Gomoku 中五连珠判定后通过 `setTimeout(() => showGameOver(), 1000)` 延迟显示结束画面，但 `gameOver` 在 `showGameOver()` 里才设 true。这导致 1 秒内玩家仍可落子（PvP 模式下尤为明显）。
+
+**教训：**
+- **判定赢棋的同一行就设 `gameOver = true`**，不要等延迟回调
+- `setTimeout` 只负责 UI 展示，不负责逻辑锁定
+- 所有事件处理函数开头都应检查 `if (gameOver) return;`
+
+### 3. 递归展开时音效需参数控制
+
+**问题：** Minesweeper 的 `revealCell()` 在零数字格时会递归 flood fill 展开大量格子。如果每次 `revealed[row][col] = true` 都播放音效，连锁展开会瞬间爆发几十次声音。
+
+**教训：**
+- 给递归函数加 `sound = true` 参数，用户直接点击时传 true，递归调用时传 false
+- **只有用户交互触发的第一层才播音效**
+- 类似模式也适用于 Tetris 消行粒子、Tanks 爆炸连锁等场景
+
+### 4. `<title>` 标签没有 `data-lang-key` 属性
+
+**问题：** i18n 系统通过 `[data-lang-key]` 选择器批量更新 DOM，但 `<title>` 不在 body 内且不支持该属性。切换语言时浏览器标签页名不会变。
+
+**教训：**
+- **所有项目必须在 `applyLang()` 中手动加一行 `document.title = t.title`**
+- 在 LANG 字典里统一维护 `title` 字段，不要硬编码
+- 这是四个项目（gomoku/tanks/tetris/minesweeper）都需要补的共性
+
+### 5. Canvas 指示器用 `ctx.arc()` 而非字符
+
+**问题：** Gomoku 白方指示器最初用 `fillText('○')` 画空心圆，黑方用 `●` 字符，样式不一致。后来改成 `ctx.arc()` 画实心圆后出现"两个同心圆"视觉效果（发光层 + 实心层被误认为两层）。
+
+**教训：**
+- Canvas 上需要统一样式的指示器时，优先用 `ctx.arc()` 绘制而非 Unicode 字符
+- **但要注意发光层和实心层的视觉分离度**——如果发光半径过大，用户会看到"双圆"效果
+- 简单场景下直接用 `fillText('●')` 反而更可靠、性能更好
+
+### 6. 音效音量不要写死在函数里
+
+**问题：** Gomoku 的 `playPlace()` 音量设为 0.1，Minesweeper 的 `playBoom()` 初始设为 0.25。后来发现爆炸声太大需要调低，但每个游戏独立维护音量值，难以统一调整。
+
+**教训：**
+- **定义统一的音效音量常量**（如 `const SOUND_VOL = { place: 0.1, boom: 0.12, win: 0.12 }`）
+- 或者抽取公共 `playSound(type)` 函数，各游戏共享
+- 这样调音量只需改一处
+
+### 7. Canvas 点击事件要处理缩放比例
+
+**问题：** Canvas 元素在 CSS 中被缩放了（响应式布局），但 `getBoundingClientRect()` 返回的是渲染尺寸而非实际像素尺寸。直接用鼠标坐标会导致落子偏移。
+
+**教训：**
+- **必须用 `scaleX = canvas.width / rect.width` 和 `scaleY = canvas.height / rect.height` 转换坐标**
+- 这是所有 Canvas 游戏的共性，建议抽取为公共函数
+- 不处理缩放时，高分屏（Retina）上落子偏差尤其明显
+
+### 8. 游戏结束后的"红线连接五子"需要独立绘制层
+
+**问题：** Gomoku 中五连珠判定后画红色连接线，但 `draw()` 函数会覆盖它。如果后续有重绘操作（如切换语言），红线会消失。
+
+**教训：**
+- **胜利线应作为持久状态存储在 board 数据中**（如 `winLine = [{x,y}, ...]`）
+- `draw()` 函数末尾统一绘制 `winLine`，确保任何重绘都保留它
+- 或者在 `showGameOver()` 显示覆盖层后锁定 Canvas 不再重绘
+
+### 9. 音效初始化需要用户交互触发
+
+**问题：** Web Audio API 的 `AudioContext` 在 Chrome/Safari 中默认处于 `suspended` 状态，首次调用 `playTone()` 时如果还没用户点击页面，音频不会播放。
+
+**教训：**
+- **第一次音效播放会自动 resume AudioContext**（现代浏览器行为），所以不需要额外处理
+- 但为了兼容性，可以在 `initAudio()` 里加 try-catch 包裹 `new AudioContext()`
+- 所有音效函数外层都要有 `try { ... } catch(e) {}`，防止无声时控制台报错刷屏
+
+### 10. 返回菜单时要彻底清空 Canvas
+
+**问题：** Gomoku 中点击"返回菜单"后，Canvas 上仍残留棋盘网格和棋子（通过半透明 overlay 覆盖），视觉上不够干净。参考 tanks.html 的做法，`backToMenu()` 应清空所有游戏数据并重绘空白画布。
+
+**教训：**
+- **`backToMenu()` 中先清空 board 数组，再调用 `drawEmptyBoard()` 或纯色填充**
+- 确保 Canvas 内容完全不可见，不依赖 overlay 透明度遮罩
+- 重新开始游戏时重新初始化所有状态变量（board、currentPlayer、gameOver 等）
+
+### 11. 五连珠判定后到结束画面之间应锁定落子检测
+
+**问题：** Gomoku 中 `checkWin()` 返回 true 后，`placePiece()` 设置 `gameOver = true` 并调用 `setTimeout(showGameOver, 1000)`。这 1 秒内红线绘制完成但结束画面未显示，用户可能误以为还能操作。
+
+**教训：**
+- **判定赢棋后立即锁定 Canvas 点击事件**（通过 `gameOver = true` + 事件检查）
+- 1 秒延迟只用于展示红线连接效果，给用户视觉反馈
+- 结束后再显示覆盖层，形成"落子 → 红线 → 结束画面"的三段式节奏
+
+### 12. 音效频率设计原则
+
+**教训：**
+- **操作类音效（落子/揭开）用短促高频正弦波**——清脆、不干扰注意力
+- **反馈类音效（获胜/升级）用升调音阶序列**——400→500→600→800Hz，每步 0.1s，营造成就感
+- **警告类音效（踩雷/爆炸）用白噪声衰减**——模拟真实爆炸的频谱特性
+- **无效操作音效用低频三角波**——低沉短促，提示"没成功"但不刺耳
+- 所有音效音量控制在 0.08~0.15 之间，避免突然大声惊吓用户
+
+---

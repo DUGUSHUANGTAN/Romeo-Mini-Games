@@ -63,7 +63,7 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
 </div>
 </div>
 </div>
-<div class="footer">Romeo的坦克大战</div>
+<div class="footer" data-lang-key="footer">Romeo的坦克大战</div>
 <script>
 
 // ======================== Language ========================
@@ -75,7 +75,7 @@ const LANG = {
     gameInfo:'Info',status:'Status',ready:'Ready',
     pvai:'Player vs AI',pvp:'P1 vs P2',
     p1Wins:'P1 Wins!',p2Wins:'P2 Wins!',playerWins:'Player Wins!',aiWins:'AI Wins!',
-    totalShots:'Total Shots:',gameOver:'Game Over',minimap:'Minimap',score:'Score:'
+    totalShots:'Total Shots:',gameOver:'Game Over',minimap:'Minimap',score:'Score:',footer:"Romeo's Tank Battle"
   },
   zh: {
     title:'坦克大战',tankBattle:'坦克大战',p1:'玩家1',p2:'玩家2',p1Score:'分数: 0',p2Score:'分数: 0',
@@ -84,8 +84,8 @@ const LANG = {
     gameInfo:'信息',status:'状态',ready:'就绪',
     pvai:'人机对战',pvp:'双人对战',
     p1Wins:'玩家1胜!',p2Wins:'玩家2胜!',playerWins:'玩家胜!',aiWins:'AI胜!',
-    totalShots:'总射击:',gameOver:'游戏结束',minimap:'小地图',score:'分数:'
-  }
+    totalShots:'总射击:',gameOver:'游戏结束',minimap:'小地图',score:'分数:',footer:'Romeo 的坦克大战'
+  },
 };
 let currentLang = 'en';
 
@@ -949,13 +949,22 @@ function initGame(){
   });
   mapLines=[];
   if(!document.documentElement.getAttribute('data-theme'))document.documentElement.setAttribute('data-theme','dark');
-  // Load saved preferences from localStorage
+  // Clear cached preferences if ?clear=true (for testing defaults)
+if (new URLSearchParams(window.location.search).has('clear')) {
+    try { localStorage.removeItem('game-theme'); localStorage.removeItem('game-lang'); } catch(e) {}
+}
+// Load saved preferences from localStorage
 (function() {
     try {
         const savedTheme = localStorage.getItem('game-theme');
         if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+        else document.documentElement.setAttribute('data-theme', 'dark');
         const savedLang = localStorage.getItem('game-lang');
-        if (savedLang && (savedLang === 'en' || savedLang === 'zh')) applyLang(savedLang);
+        if (savedLang && (savedLang === 'en' || savedLang === 'zh')) {
+            applyLang(savedLang);
+        } else {
+            applyLang('en');
+        }
     } catch(e) {}
 })();
 }

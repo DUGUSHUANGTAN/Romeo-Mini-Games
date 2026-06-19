@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -337,7 +337,8 @@ const LANG = {
         softDrop: 'Soft Drop',
         hardDrop: 'Hard Drop',
         pauseCtrl: 'Pause',
-        finalScore: 'Score: '
+        finalScore: 'Score: ',
+        footer: "Romeo's Tetris"
     },
     zh: {
         title: '俄罗斯方块',
@@ -356,7 +357,8 @@ const LANG = {
         softDrop: '加速',
         hardDrop: '硬降',
         pauseCtrl: '暂停',
-        finalScore: '分数: '
+        finalScore: '分数: ',
+        footer: 'Romeo 的俄罗斯方块'
     }
 };
 
@@ -369,6 +371,13 @@ function applyLang(lang) {
         const key = el.dataset.langKey;
         if (t[key]) el.textContent = t[key];
     });
+    // Handle footer separately since it's after the script tag
+    setTimeout(() => {
+        const footerEl = document.querySelector('[data-lang-key="footer"]');
+        if (footerEl && t.footer) {
+            footerEl.textContent = t.footer;
+        }
+    }, 0);
     document.getElementById('langToggle').textContent = lang === 'zh' ? '中文' : 'EN';
     document.title = t.title;
     // Update pause button text based on current state
@@ -865,17 +874,26 @@ document.addEventListener('keydown', (e) => {
     draw();
 });
 
+// Clear cached preferences if ?clear=true (for testing defaults)
+if (new URLSearchParams(window.location.search).has('clear')) {
+    try { localStorage.removeItem('game-theme'); localStorage.removeItem('game-lang'); } catch(e) {}
+}
 // Load saved preferences from localStorage
 (function() {
     try {
         const savedTheme = localStorage.getItem('game-theme');
         if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+        else document.documentElement.setAttribute('data-theme', 'dark');
         const savedLang = localStorage.getItem('game-lang');
-        if (savedLang && (savedLang === 'en' || savedLang === 'zh')) applyLang(savedLang);
+        if (savedLang && (savedLang === 'en' || savedLang === 'zh')) {
+            applyLang(savedLang);
+        } else {
+            applyLang('en');
+        }
     } catch(e) {}
 })();
 draw();
 </script>
-<div style="position:fixed;bottom:12px;left:16px;color:var(--text-secondary);font-size:11px;opacity:0.5;z-index:100;">Romeo的俄罗斯方块</div>
+<div style="position:fixed;bottom:12px;left:16px;color:var(--text-secondary);font-size:11px;opacity:0.5;z-index:100;" data-lang-key="footer">Romeo 的俄罗斯方块</div>
 </body>
 </html>

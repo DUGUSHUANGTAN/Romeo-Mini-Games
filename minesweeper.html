@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -75,17 +75,19 @@ canvas{display:block;image-rendering:pixelated}
     </div>
 </div>
 
-<div class="footer">Romeo的扫雷</div>
+<div class="footer" data-lang-key="footer">Romeo的扫雷</div>
 
 <script>
 const i18n = {
     zh: {
         pageTitle:'扫雷游戏',easy:'初级',medium:'中级',hard:'高级',autoFlag:'自动标雷',
-        instructions:'左键翻开方块，右键标记地雷。第一次点击保证安全。<br>点击数字可自动展开周围安全区域。'
+        instructions:'左键翻开方块，右键标记地雷。第一次点击保证安全。<br>点击数字可自动展开周围安全区域。',
+        footer:"Romeo 的扫雷"
     },
     en: {
         pageTitle:'Minesweeper',easy:'Easy',medium:'Medium',hard:'Hard',autoFlag:'Auto Flag',
-        instructions:'Left-click to reveal, right-click to flag.<br>First click is always safe.<br>Click numbers to auto-reveal safe areas.'
+        instructions:'Left-click to reveal, right-click to flag.<br>First click is always safe.<br>Click numbers to auto-reveal safe areas.',
+        footer:"Romeo's Minesweeper"
     }
 };
 
@@ -101,6 +103,11 @@ function setLanguage(lang) {
     document.getElementById('label-auto-flag').textContent = t.autoFlag;
     document.getElementById('instructions').innerHTML = t.instructions;
     document.getElementById('langToggle').textContent = lang === 'zh' ? '中文' : 'EN';
+    // Handle data-lang-key elements (footer, etc.)
+    document.querySelectorAll('[data-lang-key]').forEach(el => {
+        const key = el.dataset.langKey;
+        if (t[key]) el.textContent = t[key];
+    });
     try { localStorage.setItem('game-lang', lang); } catch(e) {}
 }
 document.getElementById('langToggle').addEventListener('click', () => {
@@ -386,6 +393,10 @@ document.getElementById('themeToggle').addEventListener('click', () => {
     setTheme(newTheme);
 });
 
+// Clear cached preferences if ?clear=true (for testing defaults)
+if (new URLSearchParams(window.location.search).has('clear')) {
+    try { localStorage.removeItem('game-theme'); localStorage.removeItem('game-lang'); } catch(e) {}
+}
 // Load saved preferences from localStorage
 (function() {
     try {

@@ -91,6 +91,7 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
 <div class="footer" data-lang-key="footer">Romeo的五子棋</div>
 
 
+<script>
 // Touch device detection
 (function() {
   if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
@@ -98,7 +99,7 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
     document.getElementById('gameCanvas').style.touchAction = 'none';
   }
 })();
-<script>
+
 // i18n
 const LANG = {
   en: {

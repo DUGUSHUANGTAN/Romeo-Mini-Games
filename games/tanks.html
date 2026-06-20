@@ -52,7 +52,7 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
     -webkit-backdrop-filter: blur(8px);
     border-top: 1px solid rgba(255,255,255,0.1);
 }
-.is-touch .touch-controls { display: flex; }
+.is-touch.game-active .touch-controls { display: flex; }
 .touch-group {
     display: flex;
     gap: 6px;
@@ -226,14 +226,14 @@ function playHit() {
   o.connect(g);g.connect(audioCtx.destination);o.type='triangle';
   o.frequency.setValueAtTime(400,audioCtx.currentTime);
   o.frequency.exponentialRampToValueAtTime(100,audioCtx.currentTime+0.15);
-  g.gain.setValueAtTime(0.12,audioCtx.currentTime);
+  g.gain.setValueAtTime(0.10,audioCtx.currentTime);
   g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.15);
   o.start();o.stop(audioCtx.currentTime+0.15)}catch(e){}
 }
 
 // Game Constants
 const COLS = 20, ROWS = 15, CELL = 40;
-const TANK_SIZE = 18, TANK_WIDTH = 26, BULLET_SPEED = 10, TANK_SPEED = 4.5, TURN_SPEED = 0.12;
+const TANK_SIZE = 18, TANK_WIDTH = 26, BULLET_SPEED = 5.5, TANK_SPEED = 3.6, TURN_SPEED = 0.055;
 
 // Maps (5 open-layout maps, no closed loops)
 const MAPS = [
@@ -509,7 +509,7 @@ class Tank {
   shoot(){
     const now = performance.now();
     if(this._lastShotTime === undefined) this._lastShotTime = 0;
-    if(now - this._lastShotTime < 500) return false;
+    if(now - this._lastShotTime < 800) return false;
     this._lastShotTime = now;
     this.shotsFired++;
     const angle=this.dir;
@@ -774,7 +774,7 @@ class Tank {
         goalY = enemy.cy;
       }
       this._findPath(goalX, goalY);
-      this._pathTimer = 10;
+      this._pathTimer = 18;
     }
 
     if (this._stuckCount > 0) this._stuckCount--;
@@ -789,7 +789,7 @@ class Tank {
 
     // ---- 射击决策 ----
     if(this.shootTimer>0)this.shootTimer--;
-    // 子弹飞来或危险时不射击
+      // 子弹飞来或危险时不射击
     const shouldNotShoot = inDanger || hasIncomingBullet;
     if(!shouldNotShoot && Math.abs(diff)<0.25 && this.shootTimer===0){
       // 检查到玩家的视线是否被墙阻挡
@@ -853,7 +853,7 @@ class Tank {
       }
       if(shouldShoot){
         this.shoot();
-        this.shootTimer=30;
+        this.shootTimer=50;
       }
     }
 
@@ -1044,9 +1044,17 @@ function gameLoop(){
   if(alive.length===0&&bullets.length===0&&explosions.length===0&&endGameTimer===null){if(gameRunning)endGame(null)}
 }
 
+var _gameTimer = null;
 function gameLoopRunner(){
-  if(!gameRunning&&!gamePaused)return;
-  gameLoop();if(gameRunning||gamePaused)animFrame=requestAnimationFrame(gameLoopRunner);
+  if(!gameRunning||gamePaused)return;
+  if(_gameTimer) return;
+  _gameTimer = setInterval(function(){
+    if(!gameRunning||gamePaused)return;
+    gameLoop();
+  }, 1000/60);
+}
+function stopGameLoop(){
+  if(_gameTimer){clearInterval(_gameTimer);_gameTimer=null;}
 }
 
 // UI
@@ -1109,6 +1117,7 @@ window.addEventListener('message', function(e) {
 function startGame(){
   if(endGameTimer){clearTimeout(endGameTimer);endGameTimer=null}
   initAudio();
+  document.body.classList.add('game-active');
   // Pick a map not played recently
   let newMap;
   do { newMap = Math.floor(Math.random()*MAPS.length); }
@@ -1173,14 +1182,15 @@ function startGame(){
   delete document.getElementById('resultSub').dataset.resultFmt;
   updateUI();
   draw();
-  if(animFrame)cancelAnimationFrame(animFrame);
+  stopGameLoop();
   gameLoopRunner();
 }
 
 function endGame(winnerTank){
   if(endGameTimer){clearTimeout(endGameTimer);endGameTimer=null}
   gameRunning=false;
-  if(animFrame)cancelAnimationFrame(animFrame);
+  stopGameLoop();
+  document.body.classList.remove('game-active');
   const overlay=document.getElementById('gameOverOverlay');
   const title=document.getElementById('winnerTitle');
   const sub=document.getElementById('resultSub');
@@ -1202,7 +1212,8 @@ function endGame(winnerTank){
 function backToMenu(){
   if(endGameTimer){clearTimeout(endGameTimer);endGameTimer=null}
   gameRunning=false;gamePaused=false;
-  if(animFrame)cancelAnimationFrame(animFrame);
+  stopGameLoop();
+  document.body.classList.remove('game-active');
   // Clear all game data first
   tanks=[];bullets=[];explosions=[];mapLines=[];
   document.getElementById('gameOverOverlay').classList.remove('show');
@@ -1221,7 +1232,7 @@ function backToMenu(){
 // Init
 window.onload=function(){initGame()};
 // Touch controls
-(function() {
+function initTouchControls() {
   if (!('ontouchstart' in window) && navigator.maxTouchPoints <= 0) return;
   document.body.classList.add('is-touch');
   var ctrl = document.getElementById('tanksTouchControls');
@@ -1233,20 +1244,6 @@ window.onload=function(){initGame()};
     if (p2Group) p2Group.style.display = gameMode === 'pvp' ? 'flex' : 'none';
     return origStart.apply(this, arguments);
   };
-
-  window.touchKeys = {};
-  var holdIntervals = {};
-
-  function startHold(key) {
-    stopHold(key);
-    holdIntervals[key] = setInterval(function() {
-      if (!window.touchKeys[key]) { stopHold(key); return; }
-      window.touchKeys[key] = true;
-    }, 100);
-  }
-  function stopHold(key) {
-    if (holdIntervals[key]) { clearInterval(holdIntervals[key]); delete holdIntervals[key]; }
-  }
 
   var p1Map = { turnl: 'a', fwd: 'w', bwd: 's', turnr: 'd', fire: ' ' };
   var p2Map = { left: 'ArrowLeft', up: 'ArrowUp', down: 'ArrowDown', right: 'ArrowRight', fire: 'Enter' };
@@ -1262,10 +1259,7 @@ window.onload=function(){initGame()};
     if (!btn) return; e.preventDefault();
     var a = getAction(btn);
     if (!a) return;
-    window.touchKeys[a.key] = true;
-    if (['a','d','w','s','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(a.key)) {
-      startHold(a.key);
-    }
+    keys[a.key] = true;
   }, {passive: false});
 
   ctrl.addEventListener('touchend', function(e) {
@@ -1273,13 +1267,11 @@ window.onload=function(){initGame()};
     if (!btn) return;
     var a = getAction(btn);
     if (!a) return;
-    window.touchKeys[a.key] = false;
-    stopHold(a.key);
+    keys[a.key] = false;
   }, {passive: true});
 
   ctrl.addEventListener('touchcancel', function() {
-    Object.keys(window.touchKeys).forEach(function(k) { window.touchKeys[k] = false; });
-    Object.keys(holdIntervals).forEach(function(k) { stopHold(k); });
+    for (var k in keys) keys[k] = false;
   }, {passive: true});
 
   // Mouse fallback for devtools
@@ -1288,49 +1280,41 @@ window.onload=function(){initGame()};
     if (!btn) return; e.preventDefault();
     var a = getAction(btn);
     if (!a) return;
-    window.touchKeys[a.key] = true;
-    if (['a','d','w','s','ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(a.key)) {
-      startHold(a.key);
-    }
+    keys[a.key] = true;
   });
   ctrl.addEventListener('mouseup', function(e) {
     var btn = e.target.closest('.touch-btn');
     if (!btn) return;
     var a = getAction(btn);
     if (!a) return;
-    window.touchKeys[a.key] = false;
-    stopHold(a.key);
+    keys[a.key] = false;
   });
   ctrl.addEventListener('mouseleave', function() {
-    Object.keys(window.touchKeys).forEach(function(k) { window.touchKeys[k] = false; });
-    Object.keys(holdIntervals).forEach(function(k) { stopHold(k); });
+    for (var k in keys) keys[k] = false;
   });
+}
 
-  // Merge touch keys into keyboard state
-  var origHandleInput = handleInput;
-  handleInput = function() {
-    Object.keys(window.touchKeys).forEach(function(k) {
-      keys[k] = keys[k] || window.touchKeys[k];
-    });
-    return origHandleInput.apply(this, arguments);
-  };
-})();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initTouchControls);
+} else {
+  initTouchControls();
+}
 
 </script>
 <div class="touch-controls" id="tanksTouchControls">
     <div class="touch-group">
-        <button class="touch-btn p1-turnl" data-p1="turnl" aria-label="左转">↺</button>
+        <button class="touch-btn p1-turnl" data-p1="turnl" aria-label="左转">←</button>
         <button class="touch-btn p1-fwd" data-p1="fwd" aria-label="前进">▲</button>
         <button class="touch-btn p1-bwd" data-p1="bwd" aria-label="后退">▼</button>
-        <button class="touch-btn p1-turnr" data-p1="turnr" aria-label="右转">↻</button>
-        <button class="touch-btn touch-btn-fire p1-fire" data-p1="fire" aria-label="射击">💥</button>
+        <button class="touch-btn p1-turnr" data-p1="turnr" aria-label="右转">→</button>
+        <button class="touch-btn touch-btn-fire p1-fire" data-p1="fire" aria-label="射击">Space</button>
     </div>
     <div class="touch-group" id="p2TouchGroup" style="display:none;">
-        <button class="touch-btn touch-btn-p2 p2-left" data-p2="left" aria-label="P2 左">◀</button>
+        <button class="touch-btn touch-btn-p2 p2-left" data-p2="left" aria-label="P2 左">←</button>
         <button class="touch-btn touch-btn-p2 p2-up" data-p2="up" aria-label="P2 前进">▲</button>
         <button class="touch-btn touch-btn-p2 p2-down" data-p2="down" aria-label="P2 后退">▼</button>
-        <button class="touch-btn touch-btn-p2 p2-right" data-p2="right" aria-label="P2 右">▶</button>
-        <button class="touch-btn touch-btn-p2 touch-btn-fire p2-fire" data-p2="fire" aria-label="P2 射击">💥</button>
+        <button class="touch-btn touch-btn-p2 p2-right" data-p2="right" aria-label="P2 右">→</button>
+        <button class="touch-btn touch-btn-p2 touch-btn-fire p2-fire" data-p2="fire" aria-label="P2 射击">Enter</button>
     </div>
 </div>
 </body>

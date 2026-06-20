@@ -9,6 +9,7 @@
 :root{--bg:#0d1117;--panel-bg:rgba(22,27,34,0.65);--panel-border:rgba(48,54,61,0.7);--text:#c9d1d9;--text-secondary:#8b949e;--btn-bg:#238636;--btn-hover:#2ea043;--btn-resume:#d29922;--btn-resume-hover:#e3b341;--btn-secondary-bg:rgba(48,54,61,0.6);--btn-secondary-hover:rgba(63,70,79,0.8);--glass-highlight:rgba(255,255,255,0.06);--overlay-bg:rgba(1,4,9,0.85);--key-bg:rgba(48,54,61,0.6);--key-border:rgba(48,54,61,0.8);--board-bg:#010409}
 [data-theme="light"]{--bg:#f6f8fa;--panel-bg:rgba(255,255,255,0.65);--panel-border:rgba(208,215,222,0.7);--text:#1f2328;--text-secondary:#656d76;--btn-bg:#1f883d;--btn-hover:#2c974b;--btn-resume:#9a6700;--btn-resume-hover:#bf8700;--btn-secondary-bg:rgba(208,215,222,0.6);--btn-secondary-hover:rgba(188,195,204,0.8);--glass-highlight:rgba(255,255,255,0.5);--overlay-bg:rgba(255,255,255,0.9);--key-bg:rgba(208,215,222,0.6);--key-border:rgba(208,215,222,0.8);--board-bg:#ffffff}
 body{background:var(--bg);display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--text)}
+body.is-touch.game-active{padding-bottom:calc(76px + env(safe-area-inset-bottom, 0px))}
 .top-bar{position:fixed;top:16px;right:16px;display:flex;gap:6px;z-index:100}
 .toggle-btn{width:30px;height:30px;border-radius:6px;border:1px solid var(--panel-border);background:var(--panel-bg);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s ease;box-shadow:inset 0 1px 0 var(--glass-highlight),0 4px 12px rgba(0,0,0,0.2)}
 .toggle-btn:hover{background:var(--btn-secondary-hover);transform:translateY(-1px)}
@@ -16,6 +17,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
 
 .game-container{position:relative;background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:12px;box-shadow:inset 0 1px 0 var(--glass-highlight),0 8px 32px rgba(0,0,0,0.3);padding:4px}
 canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
+canvas#gameCanvas{width:min(800px,calc(100vw - 16px));height:auto;max-height:calc(100vh - 16px)}
 
 .btn{width:100%;padding:10px 16px;background:var(--btn-bg);border:1px solid rgba(240,246,252,0.1);border-radius:6px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:background 0.15s ease;text-align:center}
 .btn:hover{background:var(--btn-hover)}
@@ -36,6 +38,9 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
 
 /* Touch controls */
 .touch-controls {
+    --tank-key: clamp(44px, 8.5vw, 56px);
+    --tank-fire: clamp(52px, 9.5vw, 64px);
+    --tank-gap: clamp(6px, 1.8vw, 10px);
     display: none;
     position: fixed !important;
     bottom: 0;
@@ -44,9 +49,9 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
-    padding: 8px 10px;
-    padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
+    gap: var(--tank-gap);
+    padding: 6px clamp(8px, 2.5vw, 18px);
+    padding-bottom: max(2px, env(safe-area-inset-bottom, 2px));
     background: rgba(0,0,0,0.5);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -57,14 +62,16 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
     display: flex;
     flex: 1;
     align-items: center;
+    gap: var(--tank-gap);
+    min-width: 0;
 }
 .touch-side.left { justify-content: flex-start; }
 .touch-side.right { justify-content: flex-end; }
 .touch-pad {
     display: grid;
-    grid-template-columns: repeat(3, 50px);
-    grid-template-rows: repeat(3, 50px);
-    gap: 8px;
+    grid-template-columns: repeat(3, var(--tank-key));
+    grid-template-rows: repeat(2, var(--tank-key));
+    gap: var(--tank-gap);
     align-items: center;
 }
 .touch-fire-wrap {
@@ -72,8 +79,8 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
     align-items: center;
 }
 .touch-btn {
-    width: 50px;
-    height: 50px;
+    width: var(--tank-key);
+    height: var(--tank-key);
     border-radius: 12px;
     border: 1px solid rgba(255,255,255,0.25);
     background: rgba(255,255,255,0.18);
@@ -93,8 +100,8 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
     transform: scale(0.92);
 }
 .touch-btn-fire {
-    width: 58px;
-    height: 58px;
+    width: var(--tank-fire);
+    height: var(--tank-fire);
     font-size: 20px;
     background: rgba(220, 50, 50, 0.4);
     border-color: rgba(220, 50, 50, 0.6);
@@ -110,14 +117,22 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
     background: rgba(50, 100, 220, 0.55);
 }
 @media (max-width: 500px) {
-    .touch-pad {
-        grid-template-columns: repeat(3, 44px);
-        grid-template-rows: repeat(3, 44px);
-        gap: 6px;
+    body.is-touch.game-active{padding-bottom:calc(58px + env(safe-area-inset-bottom, 0px))}
+    .game-wrapper{align-items:center}
+    canvas#gameCanvas{width:min(800px,calc(100vw - 8px));max-height:calc(100vh - 64px)}
+    .touch-controls {
+        --tank-key: clamp(38px, 11vw, 46px);
+        --tank-fire: clamp(46px, 12.5vw, 54px);
+        --tank-gap: clamp(4px, 1.5vw, 6px);
+        padding: 5px 6px;
+        padding-bottom: max(2px, env(safe-area-inset-bottom, 2px));
     }
-    .touch-btn { width: 44px; height: 44px; font-size: 16px; }
-    .touch-btn-fire { width: 52px; height: 52px; font-size: 18px; }
-    .touch-controls { gap: 8px; padding: 6px 8px; }
+    .touch-btn { font-size: 16px; }
+    .touch-btn-fire { font-size: 17px; }
+}
+@media (min-width: 501px) and (max-width: 900px) {
+    body.is-touch.game-active{padding-bottom:calc(84px + env(safe-area-inset-bottom, 0px))}
+    canvas#gameCanvas{width:min(800px,calc(100vw - 24px));max-height:calc(100vh - 100px)}
 }
 </style>
 </head>
@@ -1326,11 +1341,8 @@ if (document.readyState === 'loading') {
             <button class="touch-btn p1-fwd" data-p1="fwd" aria-label="前进">▲</button>
             <span></span>
             <button class="touch-btn p1-turnl" data-p1="turnl" aria-label="左转">←</button>
-            <span></span>
-            <button class="touch-btn p1-turnr" data-p1="turnr" aria-label="右转">→</button>
-            <span></span>
             <button class="touch-btn p1-bwd" data-p1="bwd" aria-label="后退">▼</button>
-            <span></span>
+            <button class="touch-btn p1-turnr" data-p1="turnr" aria-label="右转">→</button>
         </div>
         <div class="touch-fire-wrap">
             <button class="touch-btn touch-btn-fire p1-fire" data-p1="fire" aria-label="射击">Space</button>
@@ -1345,11 +1357,8 @@ if (document.readyState === 'loading') {
             <button class="touch-btn touch-btn-p2 p2-up" data-p2="up" aria-label="P2 前进">▲</button>
             <span></span>
             <button class="touch-btn touch-btn-p2 p2-left" data-p2="left" aria-label="P2 左">←</button>
-            <span></span>
-            <button class="touch-btn touch-btn-p2 p2-right" data-p2="right" aria-label="P2 右">→</button>
-            <span></span>
             <button class="touch-btn touch-btn-p2 p2-down" data-p2="down" aria-label="P2 后退">▼</button>
-            <span></span>
+            <button class="touch-btn touch-btn-p2 p2-right" data-p2="right" aria-label="P2 右">→</button>
         </div>
     </div>
 </div>

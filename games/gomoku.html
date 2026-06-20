@@ -29,7 +29,7 @@ canvas { touch-action: none; will-change: transform; }
   --highlight:#0969da;--black-glass:rgba(20,30,60,0.75);--white-glass:rgba(240,248,255,0.85);
 }
 
-body{background:var(--bg);display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--text)}
+body{background:var(--bg);display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--text);padding:12px}
 
 .top-bar{position:fixed;top:16px;right:16px;display:flex;gap:6px;z-index:100}
 .toggle-btn{width:30px;height:30px;border-radius:6px;border:1px solid var(--panel-border);background:var(--panel-bg);backdrop-filter: blur(24px) saturate(170%);-webkit-backdrop-filter: blur(24px) saturate(170%);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s ease;box-shadow:inset 0 1px 0 var(--glass-highlight),0 4px 12px rgba(0,0,0,0.2)}
@@ -37,7 +37,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
 
 .game-wrapper{display:flex;justify-content:center;align-items:center}
 .game-container{position:relative;background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:12px;box-shadow:inset 0 1px 0 var(--glass-highlight),0 8px 32px rgba(0,0,0,0.3);overflow:hidden}
-canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
+canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg);width:min(600px,calc(100vw - 24px),calc(100vh - 24px));height:auto}
 
 .btn{width:100%;padding:10px 16px;background:var(--btn-bg);border:1px solid rgba(240,246,252,0.1);border-radius:6px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:background 0.15s ease;text-align:center}
 .btn:hover{background:var(--btn-hover)}
@@ -55,6 +55,7 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
 .overlay-sub{font-size:13px;color:var(--text-secondary);margin-bottom:8px;text-align:center}
 
 .footer{position:fixed;bottom:12px;left:16px;color:var(--text-secondary);font-size:11px;opacity:0.5;z-index:100}
+@media (max-width:620px){.top-bar{top:8px;right:8px}.start-title{font-size:26px}.overlay-title{font-size:24px}.mode-select{flex-direction:column;width:min(280px,80vw)}.btn{min-height:44px}}
 </style>
 </head>
 <body>

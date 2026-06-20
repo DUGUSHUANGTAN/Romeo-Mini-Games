@@ -9,11 +9,11 @@ canvas{touch-action:none;will-change:transform}
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0d1117;--panel-bg:rgba(22,27,34,.65);--panel-border:rgba(48,54,61,.7);--text:#c9d1d9;--text-secondary:#8b949e;--cell-bg:#21262d;--cell-revealed:#161b22;--cell-hover:rgba(110,118,129,.4);--cell-error:#f85149;--cell-ok:#3fb950;--btn-bg:#238636;--btn-hover:#2ea043;--btn-secondary-bg:rgba(48,54,61,.6);--btn-secondary-hover:rgba(63,70,79,.8);--glass-highlight:rgba(255,255,255,.06);--highlight:#58a6ff;--same-highlight:rgba(31,111,235,.28);--done-highlight:rgba(35,134,54,.3);--pad-complete:rgba(35,134,54,.72)}
 [data-theme="light"]{--bg:#f6f8fa;--panel-bg:rgba(255,255,255,.65);--panel-border:rgba(208,215,222,.7);--text:#1f2328;--text-secondary:#656d76;--cell-bg:#fff;--cell-revealed:#f0f0f0;--cell-hover:rgba(175,184,193,.4);--cell-error:#cf222e;--cell-ok:#1a7f37;--btn-bg:#1f883d;--btn-hover:#2c974b;--btn-secondary-bg:rgba(208,215,222,.6);--btn-secondary-hover:rgba(188,195,204,.8);--glass-highlight:rgba(255,255,255,.5);--highlight:#0969da;--same-highlight:rgba(9,105,218,.24);--done-highlight:rgba(31,136,61,.24);--pad-complete:rgba(31,136,61,.72)}
-body{background:var(--bg);display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--text)}
+body{background:var(--bg);display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--text);padding:12px}
 .top-bar{position:fixed;top:16px;right:16px;display:flex;gap:6px;z-index:100}
 .toggle-btn{width:30px;height:30px;border-radius:6px;border:1px solid var(--panel-border);background:var(--panel-bg);backdrop-filter:blur(24px) saturate(170%);-webkit-backdrop-filter:blur(24px) saturate(170%);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s ease;box-shadow:inset 0 1px 0 var(--glass-highlight),0 4px 12px rgba(0,0,0,.2)}
 .toggle-btn:hover{background:var(--btn-secondary-hover);transform:translateY(-1px)}
-.container{display:flex;flex-direction:column;align-items:center;gap:16px}
+.container{display:flex;flex-direction:column;align-items:center;gap:16px;max-width:100%}
 .top-bar-game{display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;max-width:560px}
 .control-row{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}
 .difficulty-row .btn{min-width:92px;height:38px;font-size:15px;font-weight:600}
@@ -26,12 +26,12 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
 .counter{font-family:'Courier New',monospace;font-size:24px;font-weight:bold;color:var(--cell-error);min-width:60px;text-align:center}
 .reset-btn{width:40px;height:40px;border:2px solid var(--panel-border);background:var(--cell-bg);cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:all .15s ease}
 .reset-btn:hover{background:var(--cell-hover)}
-#game-canvas{display:block;border-radius:4px;background:var(--cell-revealed)}
+#game-canvas{display:block;border-radius:4px;background:var(--cell-revealed);max-width:100%;height:auto}
 .number-pad{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;width:100%;max-width:486px}
 .number-pad .btn{height:36px;padding:0;font-weight:700;min-width:0;display:flex;align-items:center;justify-content:center;line-height:1}
 .instructions{max-width:560px;text-align:center;font-size:13px;color:var(--text-secondary);line-height:1.6}
 .footer{position:fixed;bottom:12px;left:16px;color:var(--text-secondary);font-size:11px;opacity:.5;z-index:100}
-@media (max-width:620px){.container{width:100%;padding:0 12px}.game-panel{padding:12px}.number-pad{gap:4px}.btn{font-size:13px;padding:6px 10px}.difficulty-row .btn{min-width:84px}}
+@media (max-width:620px){body{padding:8px}.top-bar{top:8px;right:8px}.container{width:100%;gap:10px}.top-bar-game{gap:6px}.game-panel{padding:10px;gap:8px}.number-pad{gap:4px}.number-pad .btn{height:34px}.btn{font-size:13px;padding:6px 10px;min-height:36px}.difficulty-row .btn{min-width:84px}.instructions{display:none}}
 </style>
 </head>
 <body>
@@ -128,7 +128,7 @@ function draw(){
   }
   for(let i=0;i<=9;i++){ctx.strokeStyle=i%3?css('--panel-border'):css('--text');ctx.lineWidth=i%3?.7:2;ctx.beginPath();ctx.moveTo(i*cellSize,0);ctx.lineTo(i*cellSize,canvas.height);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i*cellSize);ctx.lineTo(canvas.width,i*cellSize);ctx.stroke()}
 }
-function resize(){cellSize=Math.floor(Math.min(window.innerWidth-56,window.innerHeight-260,486)/9);canvas.width=canvas.height=cellSize*9;draw()}
+function resize(){cellSize=Math.max(30,Math.floor(Math.min(window.innerWidth-64,window.innerHeight-230,486)/9));canvas.width=canvas.height=cellSize*9;draw()}
 function cellFromEvent(e){const rect=canvas.getBoundingClientRect();const x=(e.clientX-rect.left)*canvas.width/rect.width,y=(e.clientY-rect.top)*canvas.height/rect.height;const c=Math.floor(x/cellSize),r=Math.floor(y/cellSize);return r>=0&&r<9&&c>=0&&c<9?{r,c}:null}
 function enterNumber(n){if(!selected||done||initial[selected.r][selected.c])return;pushHistory();const {r,c}=selected;if(notes[r][c].includes(n)&&!current[r][c])notes[r][c]=notes[r][c].filter(v=>v!==n);if(noteBtn.classList.contains('active')){const a=notes[r][c],i=a.indexOf(n);i>=0?a.splice(i,1):a.push(n)}else{current[r][c]=n;notes[r][c]=[];play(n===solution[r][c]?'ok':'bad')}refreshGame()}
 

@@ -13,13 +13,13 @@ canvas { touch-action: none; will-change: transform; }
 
 [data-theme="light"]{--bg:#f6f8fa;--panel-bg:rgba(255,255,255,0.65);--panel-border:rgba(208,215,222,0.7);--text:#1f2328;--text-secondary:#656d76;--cell-bg:#ffffff;--cell-revealed:#f0f0f0;--cell-hover:rgba(175,184,193,0.4);--cell-mine:#cf222e;--cell-flag:#9a6700;--cell-number-1:#0969da;--cell-number-2:#1a7f37;--cell-number-3:#cf222e;--cell-number-4:#8250df;--cell-number-5:#bc4c00;--cell-number-6:#0969da;--cell-number-7:#bf3989;--cell-number-8:#1a7f37;--btn-bg:#1f883d;--btn-hover:#2c974b;--btn-secondary-bg:rgba(208,215,222,0.6);--btn-secondary-hover:rgba(188,195,204,0.8);--glass-highlight:rgba(255,255,255,0.5);--overlay-bg:rgba(255,255,255,0.9)}
 
-body{background:var(--bg);display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--text)}
+body{background:var(--bg);display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--text);padding:12px}
 
 .top-bar{position:fixed;top:16px;right:16px;display:flex;gap:6px;z-index:100}
 .toggle-btn{width:30px;height:30px;border-radius:6px;border:1px solid var(--panel-border);background:var(--panel-bg);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s ease;box-shadow:inset 0 1px 0 var(--glass-highlight),0 4px 12px rgba(0,0,0,0.2)}
 .toggle-btn:hover{background:var(--btn-secondary-hover);transform:translateY(-1px)}
 
-.container{display:flex;flex-direction:column;align-items:center;gap:16px}
+.container{display:flex;flex-direction:column;align-items:center;gap:16px;max-width:100%}
 
 .top-bar-game{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
 .btn{padding:6px 12px;border:1px solid var(--panel-border);background:var(--btn-secondary-bg);color:var(--text);cursor:pointer;border-radius:6px;font-size:14px;transition:all 0.2s ease}
@@ -29,7 +29,7 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
 .toggle-group{display:flex;align-items:center;gap:8px;padding:4px 12px;background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:6px}
 .toggle-label{font-size:13px;color:var(--text-secondary)}
 
-.game-panel{background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:8px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.game-panel{background:var(--panel-bg);border:1px solid var(--panel-border);border-radius:8px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px;max-width:100%}
 
 .game-header{display:flex;justify-content:space-between;align-items:center;width:100%;padding:8px 0;border-bottom:1px solid var(--panel-border)}
 .counter{font-family:'Courier New',monospace;font-size:24px;font-weight:bold;color:var(--cell-mine);min-width:60px;text-align:center}
@@ -37,11 +37,12 @@ body{background:var(--bg);display:flex;justify-content:center;align-items:center
 .reset-btn{width:40px;height:40px;border:2px solid var(--panel-border);background:var(--cell-bg);cursor:pointer;font-size:24px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:all 0.15s ease}
 .reset-btn:hover{background:var(--cell-hover)}
 
-canvas{display:block;image-rendering:pixelated}
+canvas{display:block;image-rendering:pixelated;max-width:calc(100vw - 56px);height:auto}
 
 .instructions{max-width:600px;text-align:center;font-size:13px;color:var(--text-secondary);line-height:1.6}
 
 .footer{position:fixed;bottom:12px;left:16px;color:var(--text-secondary);font-size:11px;opacity:0.5;z-index:100}
+@media (max-width:620px){.top-bar{top:8px;right:8px}.container{gap:10px}.game-panel{padding:10px;gap:8px}.btn{min-height:38px}.counter{font-size:20px}.instructions{display:none}}
 </style>
 </head>
 <body>
@@ -241,8 +242,8 @@ function updateMineCounter() {
 
 function getCellFromMouse(e) {
     const rect = canvas.getBoundingClientRect();
-    const col = Math.floor((e.clientX - rect.left) / cellSize);
-    const row = Math.floor((e.clientY - rect.top) / cellSize);
+    const col = Math.floor((e.clientX - rect.left) * canvas.width / rect.width / cellSize);
+    const row = Math.floor((e.clientY - rect.top) * canvas.height / rect.height / cellSize);
     if (row < 0 || row >= board.length || col < 0 || col >= board[0].length) return null;
     return { row, col };
 }
@@ -399,8 +400,8 @@ document.getElementById('reset-btn').addEventListener('click', () => {
 
   function getCellFromTouch(clientX, clientY) {
     var rect = canvas.getBoundingClientRect();
-    var col = Math.floor((clientX - rect.left) / cellSize);
-    var row = Math.floor((clientY - rect.top) / cellSize);
+    var col = Math.floor((clientX - rect.left) * canvas.width / rect.width / cellSize);
+    var row = Math.floor((clientY - rect.top) * canvas.height / rect.height / cellSize);
     if (row < 0 || row >= board.length || col < 0 || col >= board[0].length) return null;
     return { row: row, col: col };
   }

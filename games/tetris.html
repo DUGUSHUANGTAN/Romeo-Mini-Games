@@ -795,8 +795,9 @@ function gameLoop(ts) {
 
 function moveDown() {
     const ns = currentPiece.shape.map(([x,y]) => [x, y+1]);
-    if (!collides(ns)) currentPiece.shape = ns;
-    else lockPiece();
+    if (!collides(ns)) { currentPiece.shape = ns; return true; }
+    lockPiece();
+    return false;
 }
 
 function drawBlock(context, x, y, color, size=BLOCK_SIZE) {
@@ -950,7 +951,7 @@ document.addEventListener('keydown', (e) => {
             const r = currentPiece.shape.map(([x,y])=>[x+1,y]);
             if (!collides(r)) currentPiece.shape = r; break;
         }
-        case 'ArrowDown': moveDown(); score += 1; updateDisplay(); break;
+        case 'ArrowDown': if (moveDown()) { score += 1; updateDisplay(); } break;
         case 'ArrowUp': {
             const rt = rotate(currentPiece);
             if (rt) currentPiece = rt; break;
@@ -1018,7 +1019,7 @@ window.addEventListener('message', function(e) {
         if (!collides(r)) currentPiece.shape = r;
         break;
       }
-      case 'down': moveDown(); score += 1; updateDisplay(); break;
+      case 'down': if (moveDown()) { score += 1; updateDisplay(); } break;
       case 'rotate': {
         var rt = rotate(currentPiece);
         if (rt) currentPiece = rt;
@@ -1061,6 +1062,7 @@ window.addEventListener('message', function(e) {
   ctrl.addEventListener('mouseleave', stopHold);
 })();
 
+initBoard();
 draw();
 </script>
 <div style="position:fixed;bottom:12px;left:16px;color:var(--text-secondary);font-size:11px;opacity:0.5;z-index:100;" data-lang-key="footer">Romeo 的俄罗斯方块</div>

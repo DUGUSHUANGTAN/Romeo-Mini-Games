@@ -471,10 +471,7 @@ window.addEventListener('message', function(e) {
   var d = e.data;
   if (!d || !d.type) return;
   if (d.type === 'themeChange' && d.theme) {
-    document.documentElement.setAttribute('data-theme', d.theme);
-    document.querySelector('#themeToggle .icon').textContent = d.theme === 'light' ? '☀️' : '🌙';
-    try { localStorage.setItem('game-theme', d.theme); } catch(e) {}
-    if (typeof draw === 'function') draw();
+    setTheme(d.theme);
   }
   if (d.type === 'langChange' && d.lang && typeof applyLang === 'function') {
     applyLang(d.lang);

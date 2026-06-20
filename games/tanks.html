@@ -168,22 +168,22 @@ canvas#gameCanvas{width:min(800px,calc(100vw - 16px));height:auto;max-height:cal
 // Language
 const LANG = {
   en: {
-    title:'Tank Battle',tankBattle:'Tank Battle',p1:'P1',p2:'P2',p1Score:'Score: 0',p2Score:'Score: 0',
+    title:'Tank Battle',tankBattle:'Tank Battle',p1:'P1',p2:'P2',
     controls:'Controls',fwdBack:'Fwd/Back',turn:'Turn',shoot:'Shoot',
     startGame:'Start Game',playAgain:'Play Again',menu:'Menu',
     gameInfo:'Info',status:'Status',ready:'Ready',
     pvai:'Player vs AI',pvp:'P1 vs P2',
     p1Wins:'P1 Wins!',p2Wins:'P2 Wins!',playerWins:'Player Wins!',aiWins:'AI Wins!',
-    totalShots:'Total Shots:',gameOver:'Game Over',minimap:'Minimap',score:'Score:',footer:"Romeo's Tank Battle"
+    gameOver:'Game Over',minimap:'Minimap',footer:"Romeo's Tank Battle"
   },
   zh: {
-    title:'坦克大战',tankBattle:'坦克大战',p1:'玩家1',p2:'玩家2',p1Score:'分数: 0',p2Score:'分数: 0',
+    title:'坦克大战',tankBattle:'坦克大战',p1:'玩家1',p2:'玩家2',
     controls:'操作',fwdBack:'前进/后退',turn:'转向',shoot:'射击',
     startGame:'开始游戏',playAgain:'重新开始',menu:'返回菜单',
     gameInfo:'信息',status:'状态',ready:'就绪',
     pvai:'人机对战',pvp:'双人对战',
     p1Wins:'玩家1胜!',p2Wins:'玩家2胜!',playerWins:'玩家胜!',aiWins:'AI胜!',
-    totalShots:'总射击:',gameOver:'游戏结束',minimap:'小地图',score:'分数:',footer:'Romeo 的坦克大战'
+    gameOver:'游戏结束',minimap:'小地图',footer:'Romeo 的坦克大战'
   },
 };
 let currentLang = 'en';
@@ -210,7 +210,6 @@ function applyLang(lang) {
   }
   document.getElementById('langToggle').textContent = lang === 'zh' ? '中文' : 'EN';
   document.title = t.title;
-  updateUI();
   draw();
 }
 
@@ -485,7 +484,6 @@ class Tank {
     this.size=TANK_SIZE;this.width=TANK_WIDTH;
     this.dir=0;this.speed=TANK_SPEED;this.alive=true;
     this.cooldown=0;
-    this.score=0;this.shotsFired=0;
     this.moveDir=-1;this.moveTimer=0;this.shootTimer=0;
     // 寻路属性
     this._path=[];          // BFS 路径节点列表 [{x,y}]
@@ -544,7 +542,6 @@ class Tank {
     if(this._lastShotTime === undefined) this._lastShotTime = 0;
     if(now - this._lastShotTime < 800) return false;
     this._lastShotTime = now;
-    this.shotsFired++;
     const angle=this.dir;
     const bx=this.cx+Math.cos(angle)*(this.size/2+2);
     const by=this.cy+Math.sin(angle)*(this.size/2+2);
@@ -703,8 +700,23 @@ class Tank {
     
     this._path = [];
     this._stuckCount = 6;
-  }
-  updateAI(){
+	  }
+	  _findFallbackPath(){
+	    for(const radius of [60,100,140]){
+	      for(let i=0;i<12;i++){
+	        const angle=this.dir+(Math.PI*2*i/12);
+	        const x=this.x+Math.cos(angle)*radius;
+	        const y=this.y+Math.sin(angle)*radius;
+	        if(this.canMove(x,y,mapLines)){
+	          this._path=[{x:x+this.width/2,y:y+this.size/2}];
+	          this._pathIndex=0;
+	          return true;
+	        }
+	      }
+	    }
+	    return false;
+	  }
+	  updateAI(){
     if(!this.alive)return;
     const enemy=tanks.find(t=>t!==this&&t.alive);
     if(!enemy){this.update();return}
@@ -805,10 +817,11 @@ class Tank {
         // 安全：朝敌人位置寻路
         goalX = enemy.cx;
         goalY = enemy.cy;
-      }
-      this._findPath(goalX, goalY);
-      this._pathTimer = 18;
-    }
+	      }
+	      this._findPath(goalX, goalY);
+	      if(this._path.length===0)this._findFallbackPath();
+	      this._pathTimer = 18;
+	    }
 
     if (this._stuckCount > 0) this._stuckCount--;
     if (this._path.length > 0 && this._stuckCount <= 0) {
@@ -953,7 +966,7 @@ class Bullet {
         if(t===this.owner&&!this.bounces)continue;
         const br=this.r;
         if(this.x+br>t.x&&this.x-br<t.x+t.width&&this.y+br>t.y&&this.y-br<t.y+t.size){
-          this.alive=false;t.alive=false;t.score++;
+          this.alive=false;t.alive=false;
           spawnExplosion(t.cx,t.cy,20,t.color);playExplosion();
           const alive=tanks.filter(t=>t.alive);
           if(alive.length<=1){
@@ -1066,7 +1079,6 @@ function update(){
   for(let i=bullets.length-1;i>=0;i--){bullets[i].update();if(!bullets[i].alive)bullets.splice(i,1)}
   for(const t of tanks){if(t.alive)t.update()}
   if(gameMode==='pvai'){const ai=tanks.find(t=>!t.isPlayer);if(ai&&ai.alive)ai.updateAI()}
-  updateUI();
   draw();
 }
 
@@ -1089,9 +1101,6 @@ function gameLoopRunner(){
 function stopGameLoop(){
   if(_gameTimer){clearInterval(_gameTimer);_gameTimer=null;}
 }
-
-// UI
-function updateUI(){}
 
 // Game Flow
 function initGame(){
@@ -1213,7 +1222,6 @@ function startGame(){
   document.getElementById('gameOverOverlay').classList.remove('show');
   delete document.getElementById('winnerTitle').dataset.winnerKey;
   delete document.getElementById('resultSub').dataset.resultFmt;
-  updateUI();
   draw();
   stopGameLoop();
   gameLoopRunner();

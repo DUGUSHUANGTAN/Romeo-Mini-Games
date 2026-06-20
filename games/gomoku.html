@@ -106,12 +106,12 @@ const LANG = {
   en: {
     title:'Gomoku',pvai:'Player vs AI',pvp:'P1 vs P2',startGame:'Start Game',
     playAgain:'Play Again',menu:'Menu',gameOver:'Game Over',blackTurn:"Black's Turn",
-    whiteTurn:"White's Turn",blackWins:'Black Wins!',whiteWins:'White Wins!',modePvai:'Player vs AI',modePvp:'PvP',footer:"Romeo's Gomoku"
+    whiteTurn:"White's Turn",blackWins:'Black Wins!',whiteWins:'White Wins!',draw:'Draw!',modePvai:'Player vs AI',modePvp:'PvP',footer:"Romeo's Gomoku"
   },
   zh: {
     title:'五子棋',pvai:'人机对战',pvp:'玩家对战',startGame:'开始游戏',
     playAgain:'再来一局',menu:'返回菜单',gameOver:'游戏结束',blackTurn:'黑方落子',
-    whiteTurn:'白方落子',blackWins:'黑方获胜！',whiteWins:'白方获胜！',modePvai:'人机',modePvp:'双人对战',footer:'Romeo 的五子棋'
+    whiteTurn:'白方落子',blackWins:'黑方获胜！',whiteWins:'白方获胜！',draw:'平局！',modePvai:'人机',modePvp:'双人对战',footer:'Romeo 的五子棋'
   }
 };
 
@@ -173,6 +173,7 @@ let gameOver = false;
 let winner = null;
 let lastMove = null;   // {x, y}
 let firstClick = true;
+let moveCount = 0;
 
 // Mode Selection
 document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -210,6 +211,16 @@ function showGameOver(w) {
     titleEl.style.color = '#f0db4f';
     titleEl.dataset.langKey = 'whiteWins';
   }
+  document.getElementById('gameOverOverlay').classList.add('show');
+}
+function showDraw() {
+  gameOver = true;
+  winner = null;
+  if (aiTimer) { clearTimeout(aiTimer); aiTimer = null; }
+  const titleEl = document.getElementById('winnerTitle');
+  titleEl.textContent = LANG[currentLang].draw;
+  titleEl.style.color = 'var(--text)';
+  titleEl.dataset.langKey = 'draw';
   document.getElementById('gameOverOverlay').classList.add('show');
 }
 
@@ -262,6 +273,7 @@ function startGame() {
   winner = null;
   lastMove = null;
   firstClick = true;
+  moveCount = 0;
   
   draw();
 }
@@ -275,6 +287,7 @@ function backToMenu() {
   winner = null;
   lastMove = null;
   firstClick = true;
+  moveCount = 0;
   
   // Draw empty board so menu overlay covers clean content
   if (ctx) {
@@ -569,6 +582,7 @@ function placePiece(x, y) {
 
   board[y][x] = currentPlayer;
   lastMove = { x, y };
+  moveCount++;
   playPlace();
 
   // Check win
@@ -578,6 +592,11 @@ function placePiece(x, y) {
     drawWinLine(x, y, currentPlayer); // Draw red line connecting five in a row
     playWin();
     setTimeout(() => showGameOver(currentPlayer), 1000); // Delay 1 second before showing game over
+    return true;
+  }
+  if (moveCount >= LINE_COUNT * LINE_COUNT) {
+    draw();
+    showDraw();
     return true;
   }
 

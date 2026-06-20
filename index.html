@@ -339,6 +339,10 @@ body {
       <img class="game-icon" src="assets/minesweeper.png" alt="Minesweeper">
       <span class="game-name" data-lang-key="gameMinesweeper">Minesweeper</span>
     </div>
+    <div class="game-card" onclick="openGame('games/sudoku.html','Sudoku')">
+      <img class="game-icon" src="assets/sudoku.png" alt="Sudoku">
+      <span class="game-name" data-lang-key="gameSudoku">Sudoku</span>
+    </div>
   </div>
 </div>
 
@@ -363,6 +367,7 @@ const LANG = {
     gameGomoku: "Gomoku",
     gameTanks: "Tank Battle",
     gameMinesweeper: "Minesweeper",
+    gameSudoku: "Sudoku",
     footer: "Romeo's Mini Games",
   },
   zh: {
@@ -372,6 +377,7 @@ const LANG = {
     gameGomoku: "五子棋",
     gameTanks: "坦克大战",
     gameMinesweeper: "扫雷",
+    gameSudoku: "数独",
     footer: "Romeo 的迷你游戏",
   }
 };
@@ -532,4 +538,3 @@ window.addEventListener('message', function(e) {
 </script>
 </body>
 </html>
-

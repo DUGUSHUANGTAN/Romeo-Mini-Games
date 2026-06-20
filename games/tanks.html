@@ -37,35 +37,48 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
 /* Touch controls */
 .touch-controls {
     display: none;
-    position: fixed;
+    position: fixed !important;
     bottom: 0;
-    left: 0;
-    right: 0;
+    left: 0; right: 0;
     z-index: 200;
-    justify-content: center;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
-    padding: 10px 12px;
-    padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
-    gap: 6px;
+    gap: 12px;
+    padding: 8px 10px;
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 8px));
     background: rgba(0,0,0,0.5);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-top: 1px solid rgba(255,255,255,0.1);
 }
 .is-touch.game-active .touch-controls { display: flex; }
-.touch-group {
+.touch-side {
     display: flex;
-    gap: 6px;
+    flex: 1;
+    align-items: center;
+}
+.touch-side.left { justify-content: flex-start; }
+.touch-side.right { justify-content: flex-end; }
+.touch-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 50px);
+    grid-template-rows: repeat(3, 50px);
+    gap: 8px;
+    align-items: center;
+}
+.touch-fire-wrap {
+    display: flex;
     align-items: center;
 }
 .touch-btn {
     width: 50px;
     height: 50px;
     border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.18);
     color: #fff;
-    font-size: 16px;
+    font-size: 18px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -76,30 +89,35 @@ canvas#gameCanvas{display:block;border-radius:8px;background:var(--board-bg)}
     -webkit-user-select: none;
 }
 .touch-btn:active {
-    background: rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.4);
     transform: scale(0.92);
 }
 .touch-btn-fire {
-    width: 56px;
-    height: 56px;
+    width: 58px;
+    height: 58px;
     font-size: 20px;
     background: rgba(220, 50, 50, 0.4);
     border-color: rgba(220, 50, 50, 0.6);
 }
 .touch-btn-fire:active {
-    background: rgba(220, 50, 50, 0.7);
+    background: rgba(220, 50, 50, 0.65);
 }
 .touch-btn-p2 {
     background: rgba(50, 100, 220, 0.3);
     border-color: rgba(50, 100, 220, 0.4);
 }
 .touch-btn-p2:active {
-    background: rgba(50, 100, 220, 0.6);
+    background: rgba(50, 100, 220, 0.55);
 }
 @media (max-width: 500px) {
-    .touch-btn { width: 44px; height: 44px; font-size: 14px; }
-    .touch-btn-fire { width: 50px; height: 50px; }
-    .touch-controls { gap: 4px; padding: 8px; }
+    .touch-pad {
+        grid-template-columns: repeat(3, 44px);
+        grid-template-rows: repeat(3, 44px);
+        gap: 6px;
+    }
+    .touch-btn { width: 44px; height: 44px; font-size: 16px; }
+    .touch-btn-fire { width: 52px; height: 52px; font-size: 18px; }
+    .touch-controls { gap: 8px; padding: 6px 8px; }
 }
 </style>
 </head>
@@ -1302,19 +1320,37 @@ if (document.readyState === 'loading') {
 
 </script>
 <div class="touch-controls" id="tanksTouchControls">
-    <div class="touch-group">
-        <button class="touch-btn p1-turnl" data-p1="turnl" aria-label="左转">←</button>
-        <button class="touch-btn p1-fwd" data-p1="fwd" aria-label="前进">▲</button>
-        <button class="touch-btn p1-bwd" data-p1="bwd" aria-label="后退">▼</button>
-        <button class="touch-btn p1-turnr" data-p1="turnr" aria-label="右转">→</button>
-        <button class="touch-btn touch-btn-fire p1-fire" data-p1="fire" aria-label="射击">Space</button>
+    <div class="touch-side left">
+        <div class="touch-pad">
+            <span></span>
+            <button class="touch-btn p1-fwd" data-p1="fwd" aria-label="前进">▲</button>
+            <span></span>
+            <button class="touch-btn p1-turnl" data-p1="turnl" aria-label="左转">←</button>
+            <span></span>
+            <button class="touch-btn p1-turnr" data-p1="turnr" aria-label="右转">→</button>
+            <span></span>
+            <button class="touch-btn p1-bwd" data-p1="bwd" aria-label="后退">▼</button>
+            <span></span>
+        </div>
+        <div class="touch-fire-wrap">
+            <button class="touch-btn touch-btn-fire p1-fire" data-p1="fire" aria-label="射击">Space</button>
+        </div>
     </div>
-    <div class="touch-group" id="p2TouchGroup" style="display:none;">
-        <button class="touch-btn touch-btn-p2 p2-left" data-p2="left" aria-label="P2 左">←</button>
-        <button class="touch-btn touch-btn-p2 p2-up" data-p2="up" aria-label="P2 前进">▲</button>
-        <button class="touch-btn touch-btn-p2 p2-down" data-p2="down" aria-label="P2 后退">▼</button>
-        <button class="touch-btn touch-btn-p2 p2-right" data-p2="right" aria-label="P2 右">→</button>
-        <button class="touch-btn touch-btn-p2 touch-btn-fire p2-fire" data-p2="fire" aria-label="P2 射击">Enter</button>
+    <div class="touch-side right" id="p2TouchGroup" style="display:none;">
+        <div class="touch-fire-wrap">
+            <button class="touch-btn touch-btn-p2 touch-btn-fire p2-fire" data-p2="fire" aria-label="P2 射击">Enter</button>
+        </div>
+        <div class="touch-pad">
+            <span></span>
+            <button class="touch-btn touch-btn-p2 p2-up" data-p2="up" aria-label="P2 前进">▲</button>
+            <span></span>
+            <button class="touch-btn touch-btn-p2 p2-left" data-p2="left" aria-label="P2 左">←</button>
+            <span></span>
+            <button class="touch-btn touch-btn-p2 p2-right" data-p2="right" aria-label="P2 右">→</button>
+            <span></span>
+            <button class="touch-btn touch-btn-p2 p2-down" data-p2="down" aria-label="P2 后退">▼</button>
+            <span></span>
+        </div>
     </div>
 </div>
 </body>
